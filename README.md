@@ -65,13 +65,24 @@ Open [Temporal Signal Lab](http://localhost:8000/dashboard/temporal.html) to com
 
 Read the [Phase 5 protocol and profiler limitations](docs/TEMPORAL.md).
 
+## Phase 6: trainable recurrent competition
+
+A from-scratch **Elman tanh recurrent neural network** now trains recurrent, input and output weights using full-sequence backpropagation through time (BPTT), sequence-wise SGD, and gradient clipping. We compare it with the fixed LIF spiking reservoir, fixed tanh reservoir, history-window and delayed-tap controls on identical held-out correlated sequences.
+
+    python -m phineubio.competition --json-output dashboard/competition-report.json --csv-output competition-results.csv
+    python -m http.server 8000
+
+Open [Adaptive Competition Lab](http://localhost:8000/dashboard/competition.html). It displays test accuracy, model comparisons, training-loss curves and measured Python profiling. Recurrent network training is now real, but this is **not** a GRU, and budgets are not parameter-matched.
+
+Read the [Phase 6 research protocol](docs/COMPETITION.md), including the gradient-check test and limitations.
+
 ## Run tests
 
 Requires Python 3.10+, no third-party runtime packages.
 
     python -m unittest discover -s tests -v
 
-GitHub Actions validates tests and all five JSON experiment entry points with Python 3.10 and 3.12.
+GitHub Actions validates tests and all six JSON experiment entry points with Python 3.10 and 3.12.
 
 ## Research principles
 
@@ -81,7 +92,7 @@ GitHub Actions validates tests and all five JSON experiment entry points with Py
 4. **Protect future experiments.** Any biological hardware adapter must be explicitly optional and independently safety- and ethics-reviewed.
 5. **Integrate by contract.** PhiStream, PhiMemory9, and CompAware can consume versioned reports without coupling their runtimes.
 
-See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
+See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
 
 ## Status
 
@@ -90,7 +101,8 @@ See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md)
 - Phase 3: paired seed sweeps, stronger baselines, controlled noise and delay benchmarks
 - Phase 4: paired noise sweeps, conventional input-window controls, and analytical computational-work descriptors
 - Phase 5: temporally correlated signals, fixed tanh recurrence comparison, and measured Python profiling
-- Phase 6 (proposed): fully trained GRU/RNN, matched budgets, repeated hardware profiling
+- Phase 6: trainable recurrent Elman RNN with BPTT, loss curves, and paired held-out comparisons
+- Phase 7 (proposed): trainable GRU, validation-based tuning, budget-aware profiling
 - Research-only future: opt-in external biological hardware adapters following safety review
 
 Licensed under [MIT](LICENSE).

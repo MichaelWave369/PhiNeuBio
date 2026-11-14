@@ -16,3 +16,5 @@ dashboard/robustness-report.json
 robustness-results.csv
 dashboard/temporal-report.json
 temporal-results.csv
+dashboard/competition-report.json
+competition-results.csv
