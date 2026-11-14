@@ -9,3 +9,4 @@ dist/
 coverage.xml
 .coverage
 experiment-report.json
+dashboard/feedback-report.json

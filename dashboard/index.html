@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="PhiNeuBio: offline visualization of simulated spiking-neural-network feedback experiments.">
+<title>ΦNeuBio | Spiking Activity Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#090e1c;--pane:#141e30;--line:#283a52;--ink:#edf5fb;--muted:#a2b6cb;--aqua:#57e9d6;--blue:#679bff;--orange:#ffb96c}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 72% 0%,#17324a 0,transparent 38%),var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}
+main{width:min(1160px,calc(100% - 36px));margin:auto;padding:34px 0 80px}
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{font-size:12px;letter-spacing:.19em;text-transform:uppercase;color:var(--aqua);font-weight:800}
+h1{font-size:clamp(28px,5vw,48px);line-height:1.1;margin:10px 0 4px;letter-spacing:-.04em}
+h2{font-size:18px;margin:0}
+p{color:var(--muted);margin:8px 0}
+small{color:var(--muted)}
+.status{font-size:12px;border:1px solid #43617b;color:var(--aqua);padding:7px 12px;border-radius:999px}
+.toolbar{background:var(--pane);border:1px solid var(--line);padding:16px;border-radius:14px;margin-top:24px;display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+button,.file{font:inherit;background:#21364f;border:1px solid #43617b;border-radius:8px;color:var(--ink);padding:9px 13px;cursor:pointer}
+button:hover,.file:hover{background:#2b4769}
+button:focus-visible,input:focus-visible{outline:2px solid var(--aqua);outline-offset:3px}
+button:disabled{opacity:.4;cursor:not-allowed}
+.file input{display:none}
+.caption{font-size:12px;color:var(--muted)}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.metric{background:var(--pane);border:1px solid var(--line);border-radius:12px;padding:16px}
+.metric .value{font-weight:760;font-size:clamp(21px,3vw,32px);font-variant-numeric:tabular-nums;letter-spacing:-.04em}
+.metric .name{font-size:12px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(270px,1fr);gap:14px;margin-top:14px}
+.panel{background:var(--pane);border:1px solid var(--line);border-radius:14px;padding:17px;min-width:0}
+.panel-header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+canvas{width:100%;height:auto;display:block;margin-top:16px;background:#0a1322;border-radius:8px}
+.controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:14px}
+input[type=range]{accent-color:var(--aqua);min-width:100px;flex:1}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.info-grid div{background:#0c1626;padding:12px;border-radius:9px}
+.info-grid b{display:block;margin-top:4px;font-size:20px;font-variant-numeric:tabular-nums}
+.description{font-size:13px}
+details{margin-top:16px;color:var(--muted);font-size:13px}
+summary{cursor:pointer;color:var(--ink)}
+code{color:var(--aqua);overflow-wrap:anywhere}
+footer{margin-top:24px;font-size:12px;color:var(--muted)}
+@media(max-width:800px){.metrics{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}}
+@media(max-width:430px){.metrics{grid-template-columns:1fr 1fr}.toolbar{align-items:stretch}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div><div class="brand">PHI369 LABS / DIGITAL NEURAL RESEARCH</div><h1>ΦNeuBio Activity Lab</h1><p>Replaying a software-simulated spiking network and its reward-guided decisions.</p></div>
+  <span class="status" id="status" role="status" aria-live="polite">NO REPORT LOADED</span>
+</header>
+<section class="toolbar" aria-label="Load a research report">
+  <label class="file">Choose JSON report <input type="file" id="file" accept=".json,application/json"></label>
+  <button id="reload">Load local report</button>
+  <span class="caption">Run <code>python -m phineubio.feedback --output dashboard/feedback-report.json</code> from the repository root.</span>
+</section>
+<section class="metrics" aria-label="Experiment metrics">
+  <div class="metric"><div class="name">Before training</div><div class="value" id="before">—</div></div>
+  <div class="metric"><div class="name">After training</div><div class="value" id="after">—</div></div>
+  <div class="metric"><div class="name">Random action baseline</div><div class="value" id="baseline">—</div></div>
+  <div class="metric"><div class="name">Training reward rate</div><div class="value" id="training">—</div></div>
+</section>
+<section class="layout">
+  <article class="panel">
+    <div class="panel-header"><h2>Spike raster</h2><small>Each cyan mark is one simulated neuron firing during one trial</small></div>
+    <canvas id="raster" width="920" height="330" role="img" aria-label="Simulated neuron spike raster by trial"></canvas>
+    <div class="controls">
+      <button id="play" disabled>Play</button><button id="pause" disabled>Pause</button><button id="step" disabled>Step</button><button id="reset" disabled>Reset</button>
+      <label class="caption" for="scrub">Trial</label><input id="scrub" type="range" min="0" max="0" value="0" disabled>
+      <span id="position" class="caption">0 / 0</span>
+      <label class="caption" for="speed">Speed</label><input id="speed" type="range" min="1" max="12" value="5" style="max-width:100px">
+    </div>
+    <p class="caption">This is replay of saved simulation frames, not a live neural recording.</p>
+  </article>
+  <article class="panel">
+    <div class="panel-header"><h2>Trial inspector</h2><small id="trial-label">—</small></div>
+    <div class="info-grid">
+      <div><small>Cue</small><b id="cue">—</b></div>
+      <div><small>Chosen action</small><b id="action">—</b></div>
+      <div><small>Reward</small><b id="reward">—</b></div>
+      <div><small>Firing neurons</small><b id="firing">—</b></div>
+      <div><small>P(action 1)</small><b id="probability">—</b></div>
+      <div><small>Exploration</small><b id="explored">—</b></div>
+    </div>
+    <p class="description" id="explanation">Select a JSON report generated by the Python experiment.</p>
+  </article>
+</section>
+<section class="layout">
+  <article class="panel">
+    <div class="panel-header"><h2>Cumulative training reward</h2><small>Accuracy along the recorded training trial sequence</small></div>
+    <canvas id="rewards" width="920" height="240" role="img" aria-label="Cumulative training reward over trials"></canvas>
+  </article>
+  <article class="panel">
+    <h2>What changed?</h2>
+    <p class="description">A fixed digital leaky integrate-and-fire reservoir converts the cue into spike and voltage features. A logistic readout chooses an action and updates its weights after a binary reward. The reservoir itself does not learn.</p>
+    <details><summary>Research limits and data contract</summary><p id="limits">Requires PhiNeuBio schema 2.0 with a trace of simulated trials. The dashboard does not control living neurons or contact cloud services.</p></details>
+  </article>
+</section>
+<footer>ΦNeuBio is an open research prototype. Learning-like software behavior is not evidence of consciousness. No external assets or tracking scripts.</footer>
+</main>
+<script>
+"use strict";
+const el = id => document.getElementById(id);
+let report = null, frame = 0, playing = false, lastTick = 0;
+const pct = value => typeof value === "number" && Number.isFinite(value) ? (value * 100).toFixed(1) + "%" : "—";
+function status(message) { el("status").textContent = message; }
+function validate(data) {
+  if (!data || data.schema_version !== "2.0" || data.substrate !== "software_simulation" ||
+      data.task !== "binary_cue_reward_feedback" || !Number.isInteger(data.neuron_count) ||
+      data.neuron_count < 1 || data.neuron_count > 2048 || !Array.isArray(data.trace) ||
+      data.trace.length > 20000 || !data.metrics) throw new Error("Not a valid PhiNeuBio feedback report (schema 2.0).");
+  for (const row of data.trace) {
+    if (!Number.isInteger(row.trial) || ![0,1].includes(row.cue) || ![0,1].includes(row.action) ||
+        ![0,1].includes(row.reward) || !Array.isArray(row.spike_indices) ||
+        !row.spike_indices.every(i => Number.isInteger(i) && i >= 0 && i < data.neuron_count) ||
+        !Number.isFinite(row.cumulative_reward_rate)) throw new Error("Invalid trace row.");
+  }
+  return data;
+}
+function mount(data) {
+  report = validate(data); playing = false; frame = 0;
+  ["play","pause","step","reset","scrub"].forEach(id => el(id).disabled = !report.trace.length);
+  el("scrub").max = String(Math.max(0, report.trace.length - 1));
+  el("before").textContent = pct(report.metrics.before_accuracy);
+  el("after").textContent = pct(report.metrics.after_accuracy);
+  el("baseline").textContent = pct(report.metrics.random_action_expected_accuracy);
+  el("training").textContent = pct(report.metrics.training_reward_rate);
+  const limitations = Array.isArray(report.limitations) ? report.limitations.join(" ") : "Simulation only.";
+  el("limits").textContent = limitations;
+  status("SIMULATED TRACE: " + report.trace.length + " TRIALS");
+  render();
+}
+function drawRaster() {
+  const canvas = el("raster"), ctx = canvas.getContext("2d");
+  const w = canvas.width, h = canvas.height, left = 38, top = 14, width = w - left - 14, height = h - top - 28;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle="#0a1322";ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle="#26384c";ctx.lineWidth=1;
+  for(let k=0;k<=4;k++){const y=top+height*k/4;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(left+width,y);ctx.stroke();}
+  if(!report || !report.trace.length) return;
+  const count=report.trace.length, neurons=report.neuron_count;
+  for(let t=0;t<count;t++){
+    const row=report.trace[t], x=left+(t+.5)*width/count;
+    ctx.fillStyle=t<=frame?"#57e9d6":"#205069";
+    const cellWidth=Math.max(1,Math.min(5,width/count*.85));
+    for(const index of row.spike_indices){
+      const y=top+(index+.5)*height/neurons;
+      ctx.fillRect(x,y,cellWidth,Math.max(1,Math.min(5,height/neurons*.62)));
+    }
+  }
+  const position=left+(frame+.5)*width/count;
+  ctx.strokeStyle="#ffb96c";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(position,top);ctx.lineTo(position,top+height);ctx.stroke();
+  ctx.fillStyle="#9fb3c6";ctx.font="13px system-ui";ctx.fillText("0",6,top+7);
+  ctx.fillText(String(neurons-1),3,top+height);
+  ctx.fillText("1",left,h-7);ctx.fillText(String(count),w-35,h-7);
+}
+function drawRewards() {
+  const canvas=el("rewards"), ctx=canvas.getContext("2d");
+  const w=canvas.width,h=canvas.height,left=44,top=13,right=w-16,bottom=h-27;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle="#0a1322";ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle="#2d4159";ctx.lineWidth=1;ctx.fillStyle="#9fb3c6";ctx.font="13px system-ui";
+  [0,.5,1].forEach(n=>{const y=bottom-(bottom-top)*n;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();ctx.fillText(Math.round(n*100)+"%",5,y+4);});
+  if(!report || !report.trace.length)return;
+  const rows=report.trace;ctx.strokeStyle="#57e9d6";ctx.lineWidth=2.5;ctx.beginPath();
+  for(let i=0;i<=frame;i++){
+    const x=left+(i/Math.max(1,rows.length-1))*(right-left), y=bottom-rows[i].cumulative_reward_rate*(bottom-top);
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  ctx.fillStyle="#9fb3c6";ctx.fillText("Trial 1",left,bottom+19);ctx.fillText("Trial "+rows.length,right-76,bottom+19);
+}
+function render() {
+  drawRaster();drawRewards();
+  if (!report || !report.trace.length)return;
+  frame=Math.max(0,Math.min(frame,report.trace.length-1));
+  el("scrub").value=String(frame);el("position").textContent=(frame+1)+" / "+report.trace.length;
+  const row=report.trace[frame];
+  el("trial-label").textContent="Trial "+row.trial;
+  el("cue").textContent=String(row.cue);el("action").textContent=String(row.action);
+  el("reward").textContent=row.reward?"SUCCESS":"MISS";
+  el("firing").textContent=String(row.spike_indices.length)+" / "+report.neuron_count;
+  el("probability").textContent=pct(row.probability_action_1);
+  el("explored").textContent=row.explored?"YES":"NO";
+  el("explanation").textContent="Reward rate so far: "+pct(row.cumulative_reward_rate)+". "
+    +"A correct action earns reward 1; an incorrect action earns 0. "
+    +"The software readout updates after this trial.";
+}
+function tick(time) {
+  if(!playing)return;
+  const interval=1000/Number(el("speed").value);
+  if(time-lastTick>=interval){
+    if(frame>=report.trace.length-1){playing=false;return;}
+    frame++;lastTick=time;render();
+  }
+  requestAnimationFrame(tick);
+}
+el("play").addEventListener("click",()=>{
+  if(!report || !report.trace.length)return;
+  if(frame===report.trace.length-1)frame=0;
+  if(!playing){playing=true;lastTick=0;requestAnimationFrame(tick);}
+});
+el("pause").addEventListener("click",()=>{playing=false;});
+el("step").addEventListener("click",()=>{playing=false;frame=Math.min(frame+1,report.trace.length-1);render();});
+el("reset").addEventListener("click",()=>{playing=false;frame=0;render();});
+el("scrub").addEventListener("input",event=>{playing=false;frame=Number(event.target.value);render();});
+el("file").addEventListener("change",async event=>{
+  const file=event.target.files[0];if(!file)return;
+  try{mount(JSON.parse(await file.text()));}catch(error){playing=false;status("ERROR: "+error.message);}
+});
+async function loadLocal(){
+  try{
+    const response=await fetch("./feedback-report.json",{cache:"no-store"});
+    if(!response.ok)throw new Error("No local feedback-report.json found");
+    mount(await response.json());
+  }catch(error){
+    status("CHOOSE A REPORT FILE");
+    el("explanation").textContent="Generate a report with the Python command above, then choose that JSON file. The local server can load it automatically.";
+  }
+}
+el("reload").addEventListener("click",loadLocal);
+loadLocal();
+</script>
+</body>
+</html>
