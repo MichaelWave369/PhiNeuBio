@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phineubio"
+version = "0.1.0"
+description = "Reproducible bio-inspired computing research with digital spiking neural networks"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "PHI369 Labs"}]
+dependencies = []
+
+[project.scripts]
+phineubio = "phineubio.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["phineubio*"]
