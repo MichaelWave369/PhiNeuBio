@@ -39,7 +39,8 @@ class TemporalTests(unittest.TestCase):
         a = [model.step(bit) for bit in inputs]
         model.reset()
         self.assertEqual(a, [model.step(bit) for bit in inputs])
-        fresh = TanhReservoir(6, 99)\n        self.assertEqual(a, [fresh.step(bit) for bit in inputs])
+        fresh = TanhReservoir(6, 99)
+        self.assertEqual(a, [fresh.step(bit) for bit in inputs])
         self.assertEqual(len(a[0]), 6)
 
     def test_all_models_use_same_targets_and_sample_window(self):
