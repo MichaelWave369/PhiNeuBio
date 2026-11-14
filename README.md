@@ -4,40 +4,57 @@
 
 **Current scope:** simulated neurons only. This repository does not operate living tissue, establish consciousness, or offer medical technology.
 
-## Phase 1: a runnable spiking-neural-reservoir experiment
+## Phase 1: spiking reservoir memory
 
-The first prototype implements seeded leaky integrate-and-fire (LIF) neurons, sparse recurrent connectivity, and a trained logistic readout. A delayed-bit task tests whether reservoir state retains information from earlier input. It reports held-out accuracy alongside a majority-class baseline. These are small illustrative benchmarks, **not evidence of superior performance, biological intelligence, or consciousness**.
+The first prototype implements seeded leaky integrate-and-fire (LIF) neurons, sparse recurrent connectivity, and a trained logistic readout. A delayed-bit task tests whether reservoir state retains information from earlier input.
 
-Requirements: Python 3.10+; no third-party runtime dependencies.
-
-Run the experiment:
+Run:
 
     python -m phineubio
 
-Try a smaller, faster experiment:
+Try a smaller experiment:
 
     python -m phineubio --train-sequences 12 --test-sequences 6 --delay 2 --epochs 8
 
-Run tests:
+## Phase 2: reward-feedback experiment and activity dashboard
+
+A new experiment presents binary cues to the simulated reservoir. A logistic readout selects an action, receives a binary reward, and updates its weights. The digital reservoir's recurrent synapses **remain fixed**. Because the task has only two deterministic choices, reward effectively reveals the correct answer; this is **not general reinforcement learning**.
+
+Generate a fully reproducible report with per-neuron simulated activity:
+
+    python -m phineubio.feedback --output dashboard/feedback-report.json
+
+Launch the offline dashboard from the repository root:
+
+    python -m http.server 8000
+
+Open [ΦNeuBio Activity Lab](http://localhost:8000/dashboard/) in your browser. It replays the saved simulated neuron spike raster, choices, rewards, and cumulative reward curve. No cloud connection is required. Alternatively, open `dashboard/index.html` directly and use **Choose JSON report**.
+
+The viewer is an **animated trace replay**, not a live recording of biological neurons. For protocol and interpretation, read [Phase 2 experiment notes](docs/FEEDBACK.md).
+
+## Run tests
+
+Requires Python 3.10+, no third-party runtime packages.
 
     python -m unittest discover -s tests -v
 
-The command writes a machine-readable JSON report to stdout, including the seed, configuration, sample counts, baseline, and held-out test accuracy. Re-running with identical arguments and Python environment produces identical reports.
+GitHub Actions validates tests and both JSON experiment entry points with Python 3.10 and 3.12.
 
 ## Research principles
 
-1. **Reproduce first.** Record random seeds, experiment configuration, and held-out results.
+1. **Reproduce first.** Record random seeds, experiment configuration, held-out results, and limitations.
 2. **Separate mechanisms from claims.** A spike simulator is not a culture of biological neurons; task accuracy is not evidence of awareness.
 3. **Use independent comparisons.** Report trivial baselines, sample counts, and limitations, including negative results.
-4. **Protect future experiments.** Any real biological hardware interface must be explicitly optional and independently safety- and ethics-reviewed.
-5. **Integrate by contract.** PhiStream, PhiMemory9, and CompAware can consume versioned reports without coupling their runtime to this repository.
+4. **Protect future experiments.** Any biological hardware adapter must be explicitly optional and independently safety- and ethics-reviewed.
+5. **Integrate by contract.** PhiStream, PhiMemory9, and CompAware can consume versioned reports without coupling their runtimes.
 
-See [Architecture](docs/ARCHITECTURE.md), [Experiment protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), and [Research and ethics boundaries](docs/ETHICS.md).
+See [Architecture](docs/ARCHITECTURE.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), and [Research/ethics boundaries](docs/ETHICS.md).
 
 ## Status
 
-- Phase 1: software-only simulation and reproducible delayed-memory benchmark
-- Phase 2 (proposed): feedback-control task, feature ablations, and baseline comparisons
-- Phase 3 (research only): opt-in external-hardware adapters following safety review
+- Phase 1: software-only spiking reservoir and delayed-memory benchmark
+- Phase 2: closed-loop binary-feedback learning, JSON traces, and local activity dashboard
+- Phase 3 (proposed): seed sweeps, stronger baselines, controlled noise and delay benchmarks
+- Research-only future: opt-in external biological hardware adapters following safety review
 
 Licensed under [MIT](LICENSE).

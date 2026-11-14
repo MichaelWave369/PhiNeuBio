@@ -1,4 +1,4 @@
-name: Phase 1 CI
+name: PhiNeuBio CI
 
 on:
   push:
@@ -21,7 +21,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run standard-library tests
         run: python -m unittest discover -s tests -v
-      - name: Validate experiment report
+      - name: Validate delayed-memory report
         run: |
           python -m phineubio --train-sequences 4 --test-sequences 2 --sequence-length 16 --epochs 3 > experiment-report.json
           python -m json.tool experiment-report.json > /dev/null
+      - name: Validate feedback report and dashboard contract
+        run: |
+          python -m phineubio.feedback --train-trials 100 --evaluation-trials 40 --neurons 12 --output dashboard/feedback-report.json
+          python -m json.tool dashboard/feedback-report.json > /dev/null
+          python -c "import json; d=json.load(open('dashboard/feedback-report.json')); assert d['schema_version']=='2.0'; assert len(d['trace'])==100; assert d['metrics']['after_accuracy'] >= d['metrics']['before_accuracy']"
+      - name: Check dashboard JavaScript syntax
+        run: |
+          python -c "from pathlib import Path; h=Path('dashboard/index.html').read_text(); Path('dashboard-check.js').write_text(h.split('<script>',1)[1].split('</script>',1)[0])"
+          node --check dashboard-check.js
