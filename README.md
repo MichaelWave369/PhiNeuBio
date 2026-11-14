@@ -54,13 +54,24 @@ Open [Robustness Lab](http://localhost:8000/dashboard/robustness.html) for inter
 
 Read [Phase 4 research protocol](docs/ROBUSTNESS.md).
 
+## Phase 5: correlated signals and local Python profiling
+
+A seeded Markov signal adds temporal structure missing from the Phase 3/4 IID-bit experiments. Compare a **fixed recurrent tanh network**, fixed recurrent spiking LIF network, conventional history window, delayed-input tap, and majority baseline. The recurrent networks are **not fully trained RNNs**; only their readouts learn.
+
+    python -m phineubio.temporal --json-output dashboard/temporal-report.json --csv-output temporal-results.csv
+    python -m http.server 8000
+
+Open [Temporal Signal Lab](http://localhost:8000/dashboard/temporal.html) to compare descriptive accuracy and **actual Python-process elapsed time and traced allocations**. These are environment-dependent observations, not electrical energy measurements or optimized performance rankings.
+
+Read the [Phase 5 protocol and profiler limitations](docs/TEMPORAL.md).
+
 ## Run tests
 
 Requires Python 3.10+, no third-party runtime packages.
 
     python -m unittest discover -s tests -v
 
-GitHub Actions validates tests and all four JSON experiment entry points with Python 3.10 and 3.12.
+GitHub Actions validates tests and all five JSON experiment entry points with Python 3.10 and 3.12.
 
 ## Research principles
 
@@ -70,7 +81,7 @@ GitHub Actions validates tests and all four JSON experiment entry points with Py
 4. **Protect future experiments.** Any biological hardware adapter must be explicitly optional and independently safety- and ethics-reviewed.
 5. **Integrate by contract.** PhiStream, PhiMemory9, and CompAware can consume versioned reports without coupling their runtimes.
 
-See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
+See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
 
 ## Status
 
@@ -78,7 +89,8 @@ See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md)
 - Phase 2: closed-loop binary-feedback learning, JSON traces, and local activity dashboard
 - Phase 3: paired seed sweeps, stronger baselines, controlled noise and delay benchmarks
 - Phase 4: paired noise sweeps, conventional input-window controls, and analytical computational-work descriptors
-- Phase 5 (proposed): real runtime profiling, RNN comparators, temporally redundant signals
+- Phase 5: temporally correlated signals, fixed tanh recurrence comparison, and measured Python profiling
+- Phase 6 (proposed): fully trained GRU/RNN, matched budgets, repeated hardware profiling
 - Research-only future: opt-in external biological hardware adapters following safety review
 
 Licensed under [MIT](LICENSE).

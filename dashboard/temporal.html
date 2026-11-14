@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="PhiNeuBio temporal signal research: inspect fixed recurrent comparators, accuracy, and local Python process profiling.">
+<title>ΦNeuBio | Temporal Signal Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#090f1e;--panel:#162438;--line:#324357;--text:#edf6fa;--muted:#b2c4d2;--mint:#56e4cf}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 65% 0%,#203d4c,transparent 42%),var(--bg);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
+main{max-width:1180px;margin:auto;padding:30px 18px 70px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;flex-wrap:wrap}
+h1{font-size:clamp(30px,4.7vw,44px);margin:6px 0;letter-spacing:-.04em}h2{font-size:19px;margin:0 0 5px}
+small,p{color:var(--muted)}p{margin:7px 0}
+a{color:var(--mint)}.eyebrow{color:var(--mint);letter-spacing:.15em;font-size:12px;font-weight:750}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px;margin-top:15px}
+.tools{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+button,.pick,select{font:inherit;background:#22405c;color:var(--text);padding:9px 12px;border:1px solid #52738a;border-radius:8px;cursor:pointer}
+.pick input{display:none}
+button:focus-visible,select:focus-visible,.pick:focus-within{outline:2px solid var(--mint);outline-offset:3px}
+#status{font-size:12px;color:var(--mint)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:#0d1929;border-radius:9px;padding:12px}.stat b{display:block;font-size:25px;font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:14px}
+.chart-legend{display:flex;flex-wrap:wrap;gap:8px 15px;margin:12px 0;font-size:13px}
+.chart-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+canvas{width:100%;height:auto;background:#0c1829;border-radius:9px}
+.scroller{max-width:100%;overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:13px}
+td,th{text-align:left;border-bottom:1px solid var(--line);padding:10px 12px;font-variant-numeric:tabular-nums}
+th{color:#c7d6e4}code{color:var(--mint);overflow-wrap:anywhere}
+.note{font-size:13px}
+@media(max-width:850px){.grid{grid-template-columns:1fr}}@media(max-width:520px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div><div class="eyebrow">PHI369 LABS / PHASE 5</div><h1>ΦNeuBio Temporal Signal Lab</h1><p>Correlated inputs, digital recurrent systems, and actual Python-process measurements.</p></div>
+<nav><a href="./index.html">Activity Lab</a> · <a href="./benchmark.html">Memory Lab</a> · <a href="./robustness.html">Robustness Lab</a></nav>
+</header>
+<section class="panel tools" aria-label="Load experiment data">
+<label class="pick">Choose Phase 5 JSON <input id="file" type="file" accept=".json,application/json"></label>
+<button id="reload">Load local report</button>
+<span id="status" role="status" aria-live="polite">NO REPORT</span>
+</section>
+<section class="panel stats" aria-label="Experiment configuration">
+<div class="stat"><small>Seed count</small><b id="seeds">—</b></div>
+<div class="stat"><small>Stay probability</small><b id="stay">—</b></div>
+<div class="stat"><small>Network neurons</small><b id="neurons">—</b></div>
+<div class="stat"><small>Study runs</small><b id="runs-count">—</b></div>
+</section>
+<section class="grid">
+<div class="panel">
+<div class="tools" style="justify-content:space-between">
+<h2>Mean held-out accuracy</h2>
+<label>Noise <select id="noise" disabled><option>Load data</option></select></label>
+<label>Delay <select id="delay" disabled><option>Load data</option></select></label>
+</div>
+<div class="chart-legend" id="legend"></div>
+<canvas id="accuracy" width="920" height="375" role="img" aria-label="Comparison of five fixed-memory models by held-out accuracy"></canvas>
+<p class="note">Bars show the mean across random seeds. Values also appear in the accessible table below.</p>
+</div>
+<aside class="panel">
+<h2>What is being measured?</h2>
+<p>The tanh comparator is a <b>fixed-weight recurrent reservoir</b>. Neither it nor the spiking reservoir trains its recurrent connections. Their logistic readouts learn.</p>
+<p>Input bits stay unchanged more often than they flip. This provides temporal redundancy, so history may help recover noisy targets.</p>
+<p>Profiling measures elapsed Python-process time and peak traced Python allocations. It does not measure energy, CPU instructions, or total resident memory.</p>
+<p class="note" id="limitations">Load a Phase 5 report to inspect the run's explicit limitations.</p>
+</aside>
+</section>
+<section class="panel">
+<h2>Accuracy and variability</h2>
+<p class="note">Mean ± population standard deviation, grouped by seed. No confidence interval.</p>
+<div class="scroller"><table><thead><tr><th>Model</th><th>Mean accuracy</th><th>Population SD</th><th>Difference from LIF</th></tr></thead><tbody id="metrics"><tr><td colspan="4">No data loaded.</td></tr></tbody></table></div>
+</section>
+<section class="panel">
+<h2>Measured local processing</h2>
+<p class="note">Mean across seeds, measured sequentially and sensitive to hardware, operating system, interpreter, memory allocation and execution order. These readings are diagnostic, not a hardware efficiency ranking.</p>
+<div class="scroller"><table><thead><tr><th>Model</th><th>Mean elapsed (ms)</th><th>Mean extraction (ms)</th><th>Mean fitting (ms)</th><th>Mean scoring (ms)</th><th>Mean peak traced Python allocation (KiB)</th></tr></thead><tbody id="profile"><tr><td colspan="6">No data loaded.</td></tr></tbody></table></div>
+</section>
+<section class="panel note">
+<strong>Generate a reproducible science dataset and a machine-specific profile</strong>
+<p><code>python -m phineubio.temporal --json-output dashboard/temporal-report.json --csv-output temporal-results.csv</code></p>
+<p>Open this page using <code>python -m http.server 8000</code> from the repo root or load the JSON report with the file chooser. Model accuracies and signal samples are seeded; elapsed times and allocations are observed measurements and may change each run.</p>
+</section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const models=[
+{id:"spiking_lif",label:"Spiking LIF",color:"#5be7d4"},
+{id:"tanh_reservoir",label:"Tanh reservoir",color:"#82aaff"},
+{id:"history_window",label:"History window",color:"#cf9eff"},
+{id:"delayed_tap",label:"Delayed tap",color:"#ffc882"},
+{id:"majority",label:"Majority",color:"#b5c3d0"}
+];
+const pct=v=>typeof v==="number"&&Number.isFinite(v)?(100*v).toFixed(1)+"%":"—";
+const ms=ns=>(ns/1e6).toFixed(2);
+const avg=items=>items.reduce((a,b)=>a+b,0)/items.length;
+let data=null;
+function status(message){$("status").textContent=message;}
+function validate(input){
+ if(!input||input.schema_version!=="5.0"||input.substrate!=="software_simulation"||
+  input.task!=="temporal_signal_memory_profile"||!input.configuration||!Array.isArray(input.summary)||
+  !Array.isArray(input.runs)||input.runs.length>20000||input.summary.length>1000)throw Error("Expected PhiNeuBio Phase 5 temporal profile JSON");
+ for(const item of input.summary){
+  if(!Number.isFinite(item.noise)||!Number.isInteger(item.delay)||!item.metrics)throw Error("Invalid summary");
+  for(const model of models){
+   const m=item.metrics[model.id];
+   if(!m||!Number.isFinite(m.mean)||!Number.isFinite(m.population_stdev)||m.mean<0||m.mean>1||m.population_stdev<0||m.population_stdev>1)throw Error("Invalid summary metrics");
+  }
+ }
+ for(const row of input.runs){
+  if(!Number.isFinite(row.noise)||!Number.isInteger(row.delay)||!row.metrics||!row.profiling)throw Error("Invalid run row");
+  for(const model of models){
+   const m=row.metrics[model.id],p=row.profiling[model.id];
+   if(!Number.isFinite(m)||m<0||m>1||!p||!Number.isFinite(p.total_ns)||p.total_ns<0||
+      !Number.isFinite(p.peak_traced_python_bytes)||p.peak_traced_python_bytes<0)throw Error("Invalid profiling row");
+  }
+ }
+ return input;
+}
+function cell(row,value){const c=document.createElement("td");c.textContent=String(value);row.append(c);}
+function legend(){
+ $("legend").replaceChildren();
+ for(const model of models){
+  const label=document.createElement("span");const marker=document.createElement("i");marker.style.background=model.color;
+  label.append(marker,document.createTextNode(model.label));$("legend").append(label);
+ }
+}
+function render(){
+ if(!data)return;
+ const noise=Number($("noise").value),delay=Number($("delay").value);
+ const summary=data.summary.find(r=>r.noise===noise&&r.delay===delay);
+ const rows=data.runs.filter(r=>r.noise===noise&&r.delay===delay);
+ if(!summary||!rows.length){status("MISSING FILTER COMBINATION");return;}
+ const table=$("metrics");table.replaceChildren();
+ for(const model of models){
+  const m=summary.metrics[model.id],tr=document.createElement("tr");
+  cell(tr,model.label);cell(tr,pct(m.mean));cell(tr,pct(m.population_stdev));
+  cell(tr,((m.mean-summary.metrics.spiking_lif.mean)*100).toFixed(1)+" pp");
+  table.append(tr);
+ }
+ const profile=$("profile");profile.replaceChildren();
+ for(const model of models){
+  const p=rows.map(row=>row.profiling[model.id]);
+  const tr=document.createElement("tr");
+  cell(tr,model.label);
+  for(const key of ["total_ns","extraction_ns","fit_ns","evaluation_ns"]){cell(tr,ms(avg(p.map(v=>v[key]))));}
+  cell(tr,(avg(p.map(v=>v.peak_traced_python_bytes))/1024).toFixed(1));
+  profile.append(tr);
+ }
+ draw(summary);
+}
+function draw(summary){
+ const canvas=$("accuracy"),ctx=canvas.getContext("2d"),w=canvas.width,h=canvas.height,l=62,r=w-24,t=20,b=h-62;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#0c1829";ctx.fillRect(0,0,w,h);
+ ctx.font="14px system-ui";ctx.strokeStyle="#32465a";ctx.fillStyle="#b6c7d6";ctx.lineWidth=1;
+ for(let i=0;i<=5;i++){const y=b-i*(b-t)/5;ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(r,y);ctx.stroke();ctx.fillText((i*20)+"%",7,y+4);}
+ const cellWidth=(r-l)/models.length;
+ models.forEach((model,index)=>{
+  const x=l+index*cellWidth+cellWidth*.2,m=summary.metrics[model.id],height=(b-t)*m.mean;
+  ctx.fillStyle=model.color;ctx.fillRect(x,b-height,cellWidth*.6,height);
+  ctx.fillStyle="#dce7ef";ctx.font="13px system-ui";
+  ctx.fillText(pct(m.mean),x,b-height-8);
+  ctx.fillText(model.label.split(" ")[0],x,b+22);
+ });
+}
+function mount(result){
+ data=validate(result);
+ const conf=data.configuration;
+ $("seeds").textContent=conf.seeds.length;
+ $("stay").textContent=pct(conf.stay_probability);
+ $("neurons").textContent=conf.neurons;
+ $("runs-count").textContent=data.runs.length;
+ $("limitations").textContent=(data.limitations||[]).join(" ");
+ for(const [id,values,formatter] of [["noise",conf.noise_levels,pct],["delay",conf.delays,String]]){
+  const select=$(id);select.replaceChildren();
+  for(const value of values){const option=document.createElement("option");option.value=String(value);option.textContent=formatter(value);select.append(option);}
+  select.disabled=false;select.onchange=render;
+ }
+ status("LOADED "+data.runs.length+" PROFILE RUNS");render();
+}
+async function loadLocal(){
+ try{const response=await fetch("./temporal-report.json",{cache:"no-store"});
+ if(!response.ok)throw Error("No saved report");
+ mount(await response.json());}catch(error){status("CHOOSE A PHASE 5 REPORT");}
+}
+$("file").addEventListener("change",async event=>{
+ const file=event.target.files[0];if(!file)return;
+ try{mount(JSON.parse(await file.text()));}catch(error){status("ERROR: "+error.message);}
+});
+$("reload").addEventListener("click",loadLocal);
+legend();loadLocal();
+</script>
+</body></html>

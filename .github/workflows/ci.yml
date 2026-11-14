@@ -52,3 +52,12 @@ jobs:
         run: |
           python -c "from pathlib import Path; h=Path('dashboard/robustness.html').read_text(); Path('robustness-check.js').write_text(h.split('<script>',1)[1].split('</script>',1)[0])"
           node --check robustness-check.js
+      - name: Validate Phase 5 temporal JSON CSV and profiler
+        run: |
+          python -m phineubio.temporal --seed-count 1 --delays 1 2 --noise-levels 0 0.2 --train-sequences 3 --test-sequences 2 --sequence-length 12 --burn-in 3 --neurons 5 --epochs 3 --json-output dashboard/temporal-report.json --csv-output temporal-results.csv
+          python -m json.tool dashboard/temporal-report.json > /dev/null
+          python -c "import csv,json; d=json.load(open('dashboard/temporal-report.json')); assert d['schema_version']=='5.0'; assert len(d['runs'])==4; assert all(p['total_ns']>0 for r in d['runs'] for p in r['profiling'].values()); assert len(list(csv.DictReader(open('temporal-results.csv'))))==4"
+      - name: Check temporal dashboard JavaScript syntax
+        run: |
+          python -c "from pathlib import Path; h=Path('dashboard/temporal.html').read_text(); Path('temporal-check.js').write_text(h.split('<script>',1)[1].split('</script>',1)[0])"
+          node --check temporal-check.js
