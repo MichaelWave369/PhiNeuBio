@@ -1,4 +1,4 @@
-"""Phase 8: independently validation-tuned digital memory models and two signal families.
+"""Phase 8: independently validation-tuned digital memory models and three signal families.
 
 No model or candidate uses final test labels to choose learning rate. Timing is
 measured on an independent, unlabeled inference probe rather than the test set.
@@ -13,11 +13,13 @@ from dataclasses import asdict, dataclass
 import gc
 import json
 import math
+import os
+import platform
 from pathlib import Path
 import random
 import statistics
 import sys
-from time import perf_counter_ns
+from time import perf_counter_ns, get_clock_info
 
 from .competition import TrainableRNN
 from .gru import TrainableGRU
@@ -29,7 +31,7 @@ from .validation import validation_loss, widths_under_budget
 TRAINED = ("trainable_gru", "trainable_elman")
 READOUTS = ("spiking_lif", "tanh_reservoir", "history_window", "delayed_tap")
 MODELS = TRAINED + READOUTS + ("majority",)
-FAMILIES = ("markov", "periodic")
+FAMILIES = ("markov", "periodic", "iid")
 
 
 @dataclass(frozen=True)
@@ -89,6 +91,14 @@ def generate_sequences(
     """Distinct deterministic streams. Noise probability only changes observed bits."""
     if family == "markov":
         return make_sequences(count, length, seed, stay, noise)
+    if family == "iid":
+        rng = random.Random(seed)
+        sequences = []
+        for _ in range(count):
+            clean = [rng.randrange(2) for _ in range(length)]
+            observed = [bit ^ int(rng.random() < noise) for bit in clean]
+            sequences.append((clean, observed))
+        return sequences
     if family != "periodic":
         raise ValueError("unknown signal family")
     rng = random.Random(seed)
@@ -273,6 +283,13 @@ def run_fairness(config: FairnessConfig | None = None) -> dict:
         "substrate": "software_simulation",
         "task": "validation_tuned_multisignal_comparison",
         "configuration": asdict(cfg),
+        "runtime_environment": {
+            "python_version": ".".join(map(str, sys.version_info[:3])),
+            "os_family": platform.system(),
+            "machine_architecture": platform.machine(),
+            "logical_cpu_count": os.cpu_count(),
+            "timer_resolution_seconds": get_clock_info("perf_counter").resolution,
+        },
         "parameter_budget": sizes,
         "models": {
             "trainable_gru": "Trained GRU; validation-selected rate; full BPTT",
@@ -287,7 +304,7 @@ def run_fairness(config: FairnessConfig | None = None) -> dict:
             "splits": "Four independent seeded sequence streams: train, validation, test, profiling_probe",
             "test_usage": "Test accuracy evaluated once per selected model. Probe timing uses separate streams and never selects hyperparameters.",
             "selection": "All trainable models, including reservoir logistic readouts, select learning rate on validation binary cross-entropy only",
-            "signals": "markov: sticky first-order binary process; periodic: random repeated binary template with random phase per sequence",
+            "signals": "markov: sticky first-order binary process; periodic: random repeated binary template with random phase per sequence; iid: independent fair random input bits",
             "paired": "Same signals, corruption and time indices across models within each family/seed/noise/delay",
             "parameters": "GRU and Elman capped trainable parameters; reservoir fixed matrices, different dimensions and nonmatched operations",
             "profiling": "Independent probe, repeated perf_counter_ns timings on the current Python runtime; median reported, not energy or standardized speed",
@@ -298,7 +315,7 @@ def run_fairness(config: FairnessConfig | None = None) -> dict:
         "limitations": [
             "Digital simulation only; no actual neurons, neurological treatment or consciousness evidence.",
             "All learning-rate-tunable baselines now use independent validation, but models are NOT equal parameter, equal compute, or equally hyperparameter tuned.",
-            "Periodic templates may differ in complexity across seeds. Two toy signal families do not imply general task superiority.",
+            "Periodic templates may differ in complexity across seeds. Three toy signal families do not imply general task superiority.",
             "Testing on independent sequences reduces leakage; small seed sweeps provide only descriptive variation.",
             "Python profiling uses serial execution, different runtime implementations and independent probe inputs. It does not establish hardware speed or energy efficiency.",
             "No physical biological hardware interfaces or experimental wet-lab controls are included.",

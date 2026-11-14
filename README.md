@@ -96,13 +96,25 @@ Open [Fairness Lab](http://localhost:8000/dashboard/fairness.html) for signal/no
 
 Read the [Phase 8 protocol](docs/FAIRNESS.md).
 
+## Phase 9: seed-paired evidence audit
+
+A third signal family of IID fair random bits now acts as a no-temporal-memory control. The independent **Evidence Audit** validates saved Phase 8 reports, predeclares four paired architecture contrasts, summarizes win/loss counts across random seeds, and adds reproducible seed-level bootstrap intervals **only when five or more seeds are available**. No model training is rerun during the audit.
+
+    python -m phineubio.fairness --seed-count 5 --signal-families iid markov periodic --json-output dashboard/fairness-report.json
+    python -m phineubio.audit --input dashboard/fairness-report.json --output dashboard/audit-report.json --csv-output audit-effects.csv
+    python -m http.server 8000
+
+Open [Evidence Audit Lab](http://localhost:8000/dashboard/audit.html). The Phase 8 generator records anonymous runtime characteristics for provenance (OS family, interpreter, architecture and CPU count), but no hostnames, usernames, paths or serial numbers. The audit reports exploratory differences, **not statistically proven superiority** or energy efficiency.
+
+Read the [Phase 9 statistical limitations and protocol](docs/AUDIT.md).
+
 ## Run tests
 
 Requires Python 3.10+, no third-party runtime packages.
 
     python -m unittest discover -s tests -v
 
-GitHub Actions validates tests and all eight JSON experiment entry points with Python 3.10 and 3.12.
+GitHub Actions validates tests and all eight simulation entry points and the Phase 9 audit with Python 3.10 and 3.12.
 
 ## Research principles
 
@@ -112,7 +124,7 @@ GitHub Actions validates tests and all eight JSON experiment entry points with P
 4. **Protect future experiments.** Any biological hardware adapter must be explicitly optional and independently safety- and ethics-reviewed.
 5. **Integrate by contract.** PhiStream, PhiMemory9, and CompAware can consume versioned reports without coupling their runtimes.
 
-See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Phase 8 fairness](docs/FAIRNESS.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
+See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Phase 8 fairness](docs/FAIRNESS.md), [Phase 9 evidence audit](docs/AUDIT.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
 
 ## Status
 
@@ -124,7 +136,8 @@ See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md)
 - Phase 6: trainable recurrent Elman RNN with BPTT, loss curves, and paired held-out comparisons
 - Phase 7: trainable GRU with gradient checks, independent validation selection, and parameter-capped comparisons
 - Phase 8: independent validation of fixed readouts, periodic signals, repeated independent-probe timing
-- Phase 9 (proposed): larger predeclared tasks, sample-size curves, paired uncertainty and audited hardware runs
+- Phase 9: IID negative control, complete-grid audit, seed-level exploratory bootstrap uncertainty and local runtime provenance
+- Phase 10 (proposed): larger predeclared datasets, power planning, matched budgets, and repeated hardware profiling
 - Research-only future: opt-in external biological hardware adapters following safety review
 
 Licensed under [MIT](LICENSE).

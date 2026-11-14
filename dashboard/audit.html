@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="PhiNeuBio Phase 9 seed-paired evidence audit dashboard">
+<title>ΦNeuBio | Evidence Audit</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1120;--panel:#17253a;--line:#31475d;--ink:#edf6fc;--muted:#b0c4d2;--cyan:#58e8d1;--orange:#f4b881}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 72% 0%,#1d4351,transparent 46%),var(--bg);color:var(--ink);font:15px/1.53 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1190px;margin:auto;padding:30px 18px 70px}header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+h1{font-size:clamp(30px,5vw,46px);letter-spacing:-.045em;margin:7px 0 3px}h2{font-size:19px;margin:0 0 8px}
+p,small{color:var(--muted)}p{margin:7px 0}a{color:var(--cyan)}.kicker{color:var(--cyan);font-size:12px;font-weight:800;letter-spacing:.17em}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+button,.picker,select{font:inherit;border:1px solid #567590;background:#26435c;color:var(--ink);border-radius:8px;padding:9px 12px;cursor:pointer}
+.picker input{display:none}button:focus-visible,.picker:focus-within,select:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.status{font-size:12px;color:var(--cyan)}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.metric{border-radius:9px;padding:12px;background:#0d1929}.metric b{display:block;font-size:25px;font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(275px,1fr);gap:14px}
+canvas{width:100%;height:auto;display:block;background:#0d1929;border-radius:9px}
+.table-wrap{max-width:100%;overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap}
+td,th{padding:11px;border-bottom:1px solid var(--line);text-align:left;font-variant-numeric:tabular-nums}
+th{color:#d6e2ea}code{color:var(--cyan);overflow-wrap:anywhere}.note{font-size:13px}
+.hash{word-break:break-all;font:12px/1.5 ui-monospace,Consolas,monospace}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}@media(max-width:560px){.metrics{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><main>
+<header><div><div class="kicker">PHI369 LABS / PHASE 9</div><h1>ΦNeuBio Evidence Audit</h1>
+<p>Every seed counts. Exploratory, paired uncertainty rather than cherry-picked winners.</p></div>
+<nav><a href="./fairness.html">Fairness Lab</a> · <a href="./validation.html">Validation Lab</a> · <a href="./index.html">Activity Lab</a></nav></header>
+<section class="panel row" aria-label="Load research audit">
+<label class="picker">Choose Phase 9 audit JSON<input id="file" type="file" accept=".json,application/json"></label>
+<button id="load">Load local audit</button><span class="status" id="status" role="status" aria-live="polite">NO AUDIT</span>
+</section>
+<section class="panel metrics">
+<div class="metric"><small>Source experiments</small><b id="source-runs">—</b></div>
+<div class="metric"><small>Audit conditions</small><b id="conditions">—</b></div>
+<div class="metric"><small>Bootstrap resamples</small><b id="resamples">—</b></div>
+<div class="metric"><small>Paired contrasts</small><b id="pairs">—</b></div>
+</section>
+<section class="grid">
+<article class="panel">
+<div class="row" style="justify-content:space-between">
+<h2>Mean paired held-out accuracy difference</h2>
+<label>Signal <select id="signal" disabled><option>Load audit</option></select></label>
+<label>Noise <select id="noise" disabled><option>Load audit</option></select></label>
+<label>Delay <select id="delay" disabled><option>Load audit</option></select></label>
+</div>
+<canvas id="chart" width="950" height="440" role="img" aria-label="Paired model effects and exploratory bootstrap intervals"></canvas>
+<p class="note">The vertical zero line means the models tie. Cyan means the first model leads; orange means the second leads. Whiskers are 95% seed-level percentile intervals, available with at least five seeds.</p>
+</article>
+<aside class="panel"><h2>Interpretation limits</h2>
+<p id="caution">Load a version 9.0 audit to inspect limitations.</p>
+<p>Intervals resample <strong>whole seeds</strong>. No multiple-comparison adjustment is applied.</p>
+<p>An interval entirely above zero is an exploratory effect on this task, not proof of universal superiority.</p>
+</aside>
+</section>
+<section class="panel"><h2>Predeclared model comparisons</h2>
+<div class="table-wrap"><table><thead><tr><th>First model</th><th>Second model</th><th>Mean (pp)</th><th>95% interval (pp)</th><th>Wins / losses / ties</th><th>Seeds</th></tr></thead>
+<tbody id="comparisons"><tr><td colspan="6">No audit loaded.</td></tr></tbody></table></div></section>
+<section class="panel"><h2>Source fingerprint</h2><p class="note">SHA-256 of the canonical saved Phase 8 JSON. Different recorded profiling times can change this hash even with the same seeded accuracies.</p>
+<p class="hash" id="digest">—</p><p class="note" id="environment">No source environment data loaded.</p></section>
+<section class="panel note"><strong>Reproduce</strong>
+<p><code>python -m phineubio.fairness --seed-count 5 --signal-families iid markov periodic --json-output dashboard/fairness-report.json</code></p>
+<p><code>python -m phineubio.audit --input dashboard/fairness-report.json --output dashboard/audit-report.json --csv-output audit-effects.csv</code></p>
+<p><code>python -m http.server 8000</code> then open this page. Or choose the local audit JSON file. No third-party scripts or tracking.</p></section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const names={spiking_lif:"Spiking LIF",trainable_gru:"Trainable GRU",tanh_reservoir:"Fixed tanh",history_window:"History window"};
+const pct=x=>Number.isFinite(x)?(x*100).toFixed(2):"—";
+let audit=null;
+function status(s){$("status").textContent=s;}
+function validate(d){
+ if(!d||d.schema_version!=="9.0"||d.task!=="seed_paired_evidence_audit"||d.substrate!=="software_simulation"||
+    !Array.isArray(d.conditions)||!d.source||!d.settings||d.conditions.length>10000)throw Error("Expected Phase 9 evidence audit");
+ for(const c of d.conditions){if(typeof c.signal_family!=="string"||!Number.isFinite(c.noise)||
+   !Number.isInteger(c.delay)||!Array.isArray(c.comparisons))throw Error("Invalid audit condition");
+  for(const p of c.comparisons){if(!p.effect||!Number.isFinite(p.effect.mean_difference)||
+   !Number.isInteger(p.effect.paired_seed_count)||p.effect.paired_seed_count<1)throw Error("Invalid comparison");
+   const b=p.effect.bootstrap_95_interval;
+   if(b!==null&&(!Array.isArray(b)||b.length!==2||!b.every(Number.isFinite)))throw Error("Invalid interval");
+  }
+ }
+ return d;
+}
+function chooser(id,values,format){const s=$(id);s.replaceChildren();
+ for(const value of values){const o=document.createElement("option");o.value=String(value);o.textContent=format(value);s.append(o);}
+ s.disabled=false;s.onchange=render;
+}
+function td(row,value){const cell=document.createElement("td");cell.textContent=String(value);row.append(cell);}
+function render(){
+ if(!audit)return;
+ const c=audit.conditions.find(x=>x.signal_family===$("signal").value&&
+    x.noise===Number($("noise").value)&&x.delay===Number($("delay").value));
+ if(!c){status("FILTER MISSING");return;}
+ $("comparisons").replaceChildren();
+ for(const pair of c.comparisons){const effect=pair.effect,tr=document.createElement("tr");
+  const bounds=effect.bootstrap_95_interval;
+  td(tr,names[pair.first]||pair.first);td(tr,names[pair.second]||pair.second);
+  td(tr,(effect.mean_difference>=0?"+":"")+pct(effect.mean_difference));
+  td(tr,bounds===null?"Withheld: fewer than 5 seeds":"["+pct(bounds[0])+", "+pct(bounds[1])+"]");
+  td(tr,effect.positive_seed_count+" / "+effect.negative_seed_count+" / "+effect.tie_seed_count);
+  td(tr,effect.paired_seed_count);$("comparisons").append(tr);
+ }
+ $("caution").textContent=c.paired_seed_count<5?
+   "Only "+c.paired_seed_count+" paired seeds. No uncertainty interval is reported; conclusions are premature.":
+   "There are "+c.paired_seed_count+" paired seeds. Percentile intervals remain exploratory and unadjusted for multiple comparisons.";
+ draw(c);
+}
+function draw(c){
+ const canvas=$("chart"),ctx=canvas.getContext("2d"),w=canvas.width,h=canvas.height;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#0d1929";ctx.fillRect(0,0,w,h);
+ const effects=c.comparisons.map(p=>p.effect),extremes=[-.1,.1];
+ for(const e of effects){extremes.push(e.mean_difference);if(e.bootstrap_95_interval)extremes.push(...e.bootstrap_95_interval);}
+ const span=Math.max(.05,Math.max(...extremes.map(Math.abs))*1.2);
+ const left=180,right=w-35,top=30,bottom=h-45,zero=(left+right)/2,scale=(right-left)/(2*span);
+ const ypos=i=>top+(i+.5)*(bottom-top)/Math.max(1,effects.length);
+ ctx.font="13px system-ui";ctx.fillStyle="#bbcfdb";ctx.strokeStyle="#385168";ctx.lineWidth=1;
+ for(let k=-2;k<=2;k++){const x=zero+k*span/2*scale;ctx.beginPath();ctx.moveTo(x,top-10);ctx.lineTo(x,bottom);ctx.stroke();ctx.fillText((k*span/2*100).toFixed(1)+" pp",x-24,h-15);}
+ ctx.strokeStyle="#e8eaf0";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(zero,top-15);ctx.lineTo(zero,bottom);ctx.stroke();
+ for(let i=0;i<effects.length;i++){const e=effects[i],pair=c.comparisons[i],x=zero+e.mean_difference*scale,y=ypos(i);
+  ctx.fillStyle="#dae6ef";ctx.font="13px system-ui";
+  ctx.fillText((names[pair.first]||pair.first).split(" ")[0]+" vs "+(names[pair.second]||pair.second).split(" ")[0],9,y+5);
+  const color=e.mean_difference>=0?"#58e8d1":"#f4b881";ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=7;
+  ctx.beginPath();ctx.moveTo(zero,y);ctx.lineTo(x,y);ctx.stroke();
+  if(e.bootstrap_95_interval){const [low,high]=e.bootstrap_95_interval,x1=zero+low*scale,x2=zero+high*scale;
+    ctx.strokeStyle="#d7bdff";ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);
+    ctx.moveTo(x1,y-9);ctx.lineTo(x1,y+9);ctx.moveTo(x2,y-9);ctx.lineTo(x2,y+9);ctx.stroke();}
+  ctx.beginPath();ctx.arc(x,y,5.5,0,Math.PI*2);ctx.fill();
+ }
+}
+function mount(d){
+ audit=validate(d);
+ chooser("signal",[...new Set(d.conditions.map(c=>c.signal_family))],String);
+ chooser("noise",[...new Set(d.conditions.map(c=>c.noise))],n=>(n*100).toFixed(0)+"%");
+ chooser("delay",[...new Set(d.conditions.map(c=>c.delay))],String);
+ $("source-runs").textContent=d.source.source_run_count;$("conditions").textContent=d.conditions.length;
+ $("resamples").textContent=d.settings.bootstrap_resamples;$("pairs").textContent=d.settings.predeclared_pairs.length;
+ $("digest").textContent="SHA-256: "+d.source.canonical_json_sha256;
+ const env=d.source.environment_recorded_during_source_run;
+ $("environment").textContent=env?"Source run: "+JSON.stringify(env):"Source report contains no runtime metadata.";
+ status("LOADED "+d.conditions.length+" CONDITIONS");render();
+}
+async function loadLocal(){try{const response=await fetch("./audit-report.json",{cache:"no-store"});
+ if(!response.ok)throw Error("No audit on server");mount(await response.json());}
+ catch(error){status("CHOOSE A PHASE 9 AUDIT JSON");}}
+$("file").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;
+ try{mount(JSON.parse(await f.text()));}catch(error){status("ERROR: "+error.message);}});
+$("load").addEventListener("click",loadLocal);loadLocal();
+</script></body></html>
