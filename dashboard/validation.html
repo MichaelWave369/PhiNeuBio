@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="PhiNeuBio Phase 7: validation-selected GRU and RNN comparison using simulated temporal signals">
+<title>ΦNeuBio | Validation Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#162338;--line:#33465d;--text:#eef7fb;--muted:#b3c5d4;--aqua:#5cebd5}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 65% 0%,#1b3449,transparent 40%),var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1170px;margin:auto;padding:28px 18px 64px}header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:clamp(30px,5vw,45px);letter-spacing:-.04em;line-height:1.15;margin:9px 0}h2{font-size:19px;margin:0 0 8px}p,small{color:var(--muted)}p{margin:8px 0}a{color:var(--aqua)}
+.kicker{font-size:12px;font-weight:800;letter-spacing:.15em;color:var(--aqua)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}
+.row{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+button,.picker,select{font:inherit;border-radius:8px;border:1px solid #57768c;background:#254158;color:var(--text);padding:9px 12px;cursor:pointer}
+.picker input{display:none}button:focus-visible,.picker:focus-within,select:focus-visible{outline:2px solid var(--aqua);outline-offset:3px}
+#status{font-size:12px;color:var(--aqua)}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.metric{background:#0c1728;border-radius:8px;padding:13px}.metric b{font-size:24px;display:block;font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:14px}
+canvas{width:100%;height:auto;background:#0c1728;border-radius:9px}
+.scroller{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:13px}
+td,th{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}th{color:#d1dfe9}
+.note{font-size:13px}code{color:var(--aqua);overflow-wrap:anywhere}
+@media(max-width:870px){.grid{grid-template-columns:1fr}}@media(max-width:550px){.metrics{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><main>
+<header><div><div class="kicker">PHI369 LABS / PHASE 7</div><h1>ΦNeuBio Validation Lab</h1>
+<p>Gated recurrent learning, independent validation, and parameter-capped comparisons.</p></div>
+<nav><a href="./index.html">Activity</a> · <a href="./competition.html">Competition</a> · <a href="./temporal.html">Temporal</a></nav>
+</header>
+<section class="panel row" aria-label="Load Phase 7 report">
+<label class="picker">Choose Phase 7 JSON<input type="file" id="file" accept=".json,application/json"></label>
+<button id="load">Load local report</button><span id="status" role="status" aria-live="polite">NO REPORT LOADED</span>
+</section>
+<section class="panel metrics">
+<div class="metric"><small>Training sequences</small><b id="training">—</b></div>
+<div class="metric"><small>Validation sequences</small><b id="validation">—</b></div>
+<div class="metric"><small>Test sequences</small><b id="testing">—</b></div>
+<div class="metric"><small>Parameter cap</small><b id="budget">—</b></div>
+</section>
+<div class="grid">
+<section class="panel">
+<div class="row" style="justify-content:space-between"><h2>Mean independent test accuracy</h2>
+<label>Noise <select id="noise" disabled><option>Load report</option></select></label>
+<label>Delay <select id="delay" disabled><option>Load report</option></select></label>
+</div>
+<canvas id="accuracy" width="940" height="400" aria-label="Mean test accuracy for seven digital models" role="img"></canvas>
+<p class="note">Model selection uses validation loss; the final test split is separate. Bars show mean accuracy across seeds, not confidence intervals.</p>
+</section>
+<aside class="panel">
+<h2>Selection rules</h2>
+<p><b>GRU and Elman:</b> train each candidate learning rate on the training stream, choose the lowest validation cross-entropy, then evaluate the selected model on test once.</p>
+<p><b>Fixed reservoirs:</b> retain the inherited logistic readout schedule without validation tuning. Results are exploratory and not a full parity-controlled comparison.</p>
+<p class="note" id="limitations">No biological tissue or consciousness measurement. Parameter caps do not guarantee equal compute.</p>
+</aside>
+</div>
+<div class="grid">
+<section class="panel">
+<h2>Selected learning rate and loss</h2>
+<div class="row"><label>Seed <select id="seed" disabled><option>Load report</option></select></label></div>
+<div class="scroller"><table><thead><tr><th>Model</th><th>Learning rate</th><th>Validation BCE</th><th>Test accuracy</th><th>Hidden width</th><th>Trainable parameters</th></tr></thead><tbody id="selection"><tr><td colspan="6">No data loaded.</td></tr></tbody></table></div>
+</section>
+<aside class="panel">
+<h2>Parameter budgets</h2>
+<div class="scroller"><table><thead><tr><th>Model</th><th>Hidden units</th><th>Parameters</th></tr></thead><tbody id="parameter-table"><tr><td colspan="3">No data loaded.</td></tr></tbody></table></div>
+<p class="note">Both trainable networks fit under the configured cap, but their exact counts and computational workloads differ.</p>
+</aside>
+</div>
+<section class="panel"><h2>Full test-accuracy comparison</h2>
+<div class="scroller"><table><thead><tr><th>Model</th><th>Mean</th><th>Population SD</th><th>Difference vs GRU</th></tr></thead><tbody id="results"><tr><td colspan="4">No data loaded.</td></tr></tbody></table></div>
+</section>
+<section class="panel note"><b>Reproduce this experiment</b>
+<p><code>python -m phineubio.validation --json-output dashboard/validation-report.json --csv-output validation-results.csv</code></p>
+<p>Start <code>python -m http.server 8000</code> from the repository root, or open this HTML locally and select a report. No external scripts or network uploads.</p>
+</section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const models=[
+{id:"trainable_gru",label:"Trainable GRU",color:"#5cebd5"},
+{id:"trainable_elman",label:"Trainable Elman",color:"#81afff"},
+{id:"spiking_lif",label:"Spiking LIF",color:"#ffb777"},
+{id:"tanh_reservoir",label:"Fixed tanh",color:"#9dc7ba"},
+{id:"history_window",label:"History window",color:"#d7a5fa"},
+{id:"delayed_tap",label:"Delayed tap",color:"#e8d688"},
+{id:"majority",label:"Majority",color:"#abb9c7"}
+];
+let report=null;
+const pct=n=>Number.isFinite(n)?(100*n).toFixed(1)+"%":"—";
+function status(value){$("status").textContent=value;}
+function validate(value){
+ if(!value||value.schema_version!=="7.0"||value.substrate!=="software_simulation"||
+    value.task!=="validation_selected_gru_competition"||!value.configuration||
+    !value.parameter_budgets||!Array.isArray(value.summary)||!Array.isArray(value.runs)||
+    value.runs.length>10000||value.summary.length>1000)throw Error("Expected Phase 7 report");
+ for(const item of value.summary){
+  if(!item.metrics||!models.every(m=>item.metrics[m.id]&&
+    Number.isFinite(item.metrics[m.id].mean)&&item.metrics[m.id].mean>=0&&item.metrics[m.id].mean<=1&&
+    Number.isFinite(item.metrics[m.id].population_stdev)))throw Error("Invalid model summary");
+ }
+ for(const row of value.runs){
+  if(!row.metrics||!row.selection||!Number.isInteger(row.seed)||
+     !models.every(m=>Number.isFinite(row.metrics[m.id])&&row.metrics[m.id]>=0&&row.metrics[m.id]<=1)||
+     !["trainable_gru","trainable_elman"].every(name=>row.selection[name]&&
+       Number.isFinite(row.selection[name].selected_learning_rate)&&
+       Number.isFinite(row.selection[name].validation_cross_entropy)))throw Error("Invalid run");
+ }
+ return value;
+}
+function cell(tr,value){const td=document.createElement("td");td.textContent=String(value);tr.append(td);}
+function render(){
+ if(!report)return;
+ const noise=Number($("noise").value),delay=Number($("delay").value),seed=Number($("seed").value);
+ const summary=report.summary.find(x=>x.noise===noise&&x.delay===delay);
+ const group=report.runs.filter(x=>x.noise===noise&&x.delay===delay);
+ if(!summary||!group.length){status("FILTER NOT FOUND");return;}
+ drawBars(summary);
+ $("results").replaceChildren();
+ for(const model of models){
+  const tr=document.createElement("tr"),s=summary.metrics[model.id];
+  cell(tr,model.label);cell(tr,pct(s.mean));cell(tr,pct(s.population_stdev));
+  cell(tr,((s.mean-summary.metrics.trainable_gru.mean)*100).toFixed(1)+" pp");
+  $("results").append(tr);
+ }
+ const run=group.find(x=>x.seed===seed)||group[0];
+ $("selection").replaceChildren();
+ for(const name of ["trainable_gru","trainable_elman"]){
+  const s=run.selection[name],tr=document.createElement("tr");
+  cell(tr,name==="trainable_gru"?"Trainable GRU":"Trainable Elman");
+  cell(tr,s.selected_learning_rate);cell(tr,s.validation_cross_entropy.toFixed(5));
+  cell(tr,pct(s.test_accuracy));cell(tr,s.hidden_width);cell(tr,s.trainable_parameters);
+  $("selection").append(tr);
+ }
+}
+function drawBars(summary){
+ const canvas=$("accuracy"),ctx=canvas.getContext("2d");
+ const w=canvas.width,h=canvas.height,l=54,r=w-19,t=18,b=h-62;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#0c1728";ctx.fillRect(0,0,w,h);
+ ctx.font="13px system-ui";ctx.fillStyle="#b3c4d4";ctx.strokeStyle="#334a62";
+ for(let k=0;k<=5;k++){const y=b-(b-t)*k/5;ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(r,y);ctx.stroke();ctx.fillText(k*20+"%",5,y+4);}
+ const width=(r-l)/models.length;
+ models.forEach((m,i)=>{
+  const value=summary.metrics[m.id].mean,x=l+(i+0.18)*width,height=(b-t)*value;
+  ctx.fillStyle=m.color;ctx.fillRect(x,b-height,width*0.64,height);
+  ctx.fillStyle="#e5f0f7";ctx.fillText(pct(value),x,b-height-8);
+  ctx.fillText(m.label.split(" ")[0],x,b+22);
+ });
+}
+function fillSelect(id,values,formatter){
+ const node=$(id);node.replaceChildren();
+ for(const value of values){const option=document.createElement("option");option.value=String(value);option.textContent=formatter(value);node.append(option);}
+ node.disabled=false;node.onchange=render;
+}
+function mount(data){
+ report=validate(data);
+ const c=report.configuration;
+ $("training").textContent=c.train_sequences;
+ $("validation").textContent=c.validation_sequences;
+ $("testing").textContent=c.test_sequences;
+ $("budget").textContent=c.parameter_budget;
+ $("limitations").textContent=Array.isArray(report.limitations)?report.limitations.join(" "):"Software-only research.";
+ const table=$("parameter-table");table.replaceChildren();
+ for(const name of ["trainable_gru","trainable_elman"]){
+  const item=report.parameter_budgets[name],tr=document.createElement("tr");
+  cell(tr,name==="trainable_gru"?"GRU":"Elman");
+  cell(tr,item.hidden_width);cell(tr,item.trainable_parameters);table.append(tr);
+ }
+ fillSelect("noise",c.noise_levels,pct);fillSelect("delay",c.delays,String);fillSelect("seed",c.seeds,String);
+ status("LOADED "+report.runs.length+" EXPERIMENTS");render();
+}
+async function loadLocal(){
+ try{const result=await fetch("./validation-report.json",{cache:"no-store"});
+ if(!result.ok)throw Error("No local report");mount(await result.json());}
+ catch(error){status("CHOOSE A PHASE 7 REPORT");}
+}
+$("file").addEventListener("change",async event=>{
+ const file=event.target.files[0];if(!file)return;
+ try{mount(JSON.parse(await file.text()));}catch(error){status("ERROR: "+error.message);}
+});
+$("load").addEventListener("click",loadLocal);
+loadLocal();
+</script>
+</body></html>
