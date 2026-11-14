@@ -20,3 +20,5 @@ dashboard/competition-report.json
 competition-results.csv
 dashboard/validation-report.json
 validation-results.csv
+dashboard/fairness-report.json
+fairness-results.csv
