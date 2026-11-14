@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Offline analysis of PhiNeuBio simulated-memory robustness experiments across seeds, delays and noise.">
+<title>ΦNeuBio | Robustness Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#152136;--border:#2a3b52;--text:#edf4f9;--soft:#b0c3d2;--accent:#62e8d1}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 55% 0%,#1d3746,transparent 44%),var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1190px;margin:auto;padding:34px 20px 70px}
+header{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px}
+small,p{color:var(--soft)}p{margin:7px 0}h1{font-size:clamp(30px,5vw,46px);margin:6px 0;letter-spacing:-.05em}h2{font-size:18px;margin:0 0 6px}
+a{color:var(--accent)}.kicker{font-size:12px;letter-spacing:.17em;color:var(--accent);font-weight:800;text-transform:uppercase}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;margin-top:14px}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+button,.pick,select{border:1px solid #496a80;background:#234057;border-radius:8px;color:var(--text);font:inherit;padding:9px 12px;cursor:pointer}
+.pick input{display:none}button:focus-visible,select:focus-visible,.pick:focus-within,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+#status{font-size:12px;letter-spacing:.02em;color:var(--accent)}
+.indicators{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.indicator{background:#0b1728;border-radius:9px;padding:12px}.indicator b{display:block;font-size:24px;font-variant-numeric:tabular-nums}.indicator small{font-size:12px}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(250px,1fr);gap:14px}
+.legend{display:flex;flex-wrap:wrap;gap:7px 14px;margin:14px 0}.legend label{cursor:pointer;display:flex;align-items:center;gap:6px;font-size:12px}
+.legend i{width:10px;height:10px;border-radius:100%;display:inline-block}
+input[type=checkbox]{accent-color:var(--accent)}
+canvas{width:100%;height:auto;background:#0b1728;border-radius:9px}
+.table-wrap{overflow:auto;max-width:100%}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:13px}
+td,th{padding:10px 11px;border-bottom:1px solid #34465d;text-align:left;font-variant-numeric:tabular-nums}th{color:#c4d4e0}
+.note{font-size:13px}code{color:var(--accent);overflow-wrap:anywhere}
+@media(max-width:850px){.grid{grid-template-columns:1fr}}@media(max-width:580px){.indicators{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div><div class="kicker">PHI369 LABS / PHASE 4</div><h1>ΦNeuBio Robustness Lab</h1><p>Six digital memory strategies, paired inputs, and controlled noise.</p></div>
+<div><a href="./benchmark.html">Memory Lab</a> · <a href="./index.html">Activity Lab</a></div>
+</header>
+<section class="panel row" aria-label="Load experiment report">
+<label class="pick">Choose Phase 4 JSON<input type="file" id="file" accept=".json,application/json"></label>
+<button id="reload">Load local report</button>
+<span id="status" role="status" aria-live="polite">NO REPORT LOADED</span>
+</section>
+<section class="panel indicators" aria-label="Experiment summary">
+<div class="indicator"><small>Seeds</small><b id="seeds">—</b></div>
+<div class="indicator"><small>Noise levels</small><b id="noises">—</b></div>
+<div class="indicator"><small>Memory delays</small><b id="delays">—</b></div>
+<div class="indicator"><small>History window</small><b id="window">—</b></div>
+</section>
+<section class="grid">
+<div class="panel">
+<div class="row" style="justify-content:space-between">
+<h2>Held-out accuracy vs delay</h2>
+<label for="noise">Observed bit flip rate <select id="noise" disabled><option>Load report</option></select></label>
+</div>
+<p class="note">Error bars show descriptive population standard deviation across seeds. No statistical significance implied.</p>
+<div class="legend" id="legend" aria-label="Select comparison models"></div>
+<canvas id="chart" width="940" height="460" role="img" aria-label="Held-out model accuracy versus delayed memory step, filtered by noise level"></canvas>
+</div>
+<aside class="panel">
+<h2>Read the results carefully</h2>
+<p>The <strong>history window</strong> is ordinary software that remembers earlier inputs explicitly. The spiking reservoir must encode history in internal state.</p>
+<p>The task uses independent random bits. Surrounding bits contain no information that can repair a flipped bit, so the expected best accuracy with the matching noisy input is <strong id="ceiling">1 - noise rate</strong>.</p>
+<p class="note" id="limitations">Results are software simulations only. Work counters are analytical loop-dimension proxies, not FLOPs or electrical energy.</p>
+</aside>
+</section>
+<section class="panel">
+<h2>Mean accuracy by delay</h2><p class="note">Values are mean ± population standard deviation, filtered by the chosen noise level.</p>
+<div class="table-wrap"><table><thead><tr><th>Delay</th><th>Recurrent LIF</th><th>No-recurrence LIF</th><th>Current bit</th><th>History window</th><th>Delayed tap</th><th>Majority</th></tr></thead><tbody id="means"><tr><td colspan="7">No report loaded.</td></tr></tbody></table></div>
+</section>
+<section class="panel">
+<h2>Work descriptors</h2>
+<p class="note">Counts for one selected seed/noise/delay run. These are NOT elapsed time, physical energy, or an equal-parameter comparison. Both LIF implementations still iterate dense adjacency arrays.</p>
+<div class="table-wrap"><table><thead><tr><th>Model</th><th>Readout features</th><th>Trainable parameters</th><th>Readout weight-update slots</th><th>Neuron state updates</th><th>Dense pair scans</th></tr></thead><tbody id="costs"><tr><td colspan="6">No report loaded.</td></tr></tbody></table></div>
+</section>
+<section class="panel">
+<h2>Individual seed results</h2>
+<div class="table-wrap"><table><thead><tr><th>Seed</th><th>Noise</th><th>Delay</th><th>Train samples</th><th>Test samples</th><th>Recurrent LIF</th><th>History window</th><th>Delayed tap</th></tr></thead><tbody id="runs"><tr><td colspan="8">No report loaded.</td></tr></tbody></table></div>
+</section>
+<section class="panel note">
+<strong>Reproduce the experiment</strong>
+<p><code>python -m phineubio.robustness --json-output dashboard/robustness-report.json --csv-output robustness-results.csv</code></p>
+<p>Serve the repository with <code>python -m http.server 8000</code> and open this page, or load a generated report via the file picker. No external scripts or tracking.</p>
+</section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const models=[
+ {id:"spiking_recurrent",label:"Recurrent LIF",color:"#55e8d0"},
+ {id:"spiking_no_recurrence",label:"No-recurrence LIF",color:"#ffb779"},
+ {id:"current_input",label:"Current bit",color:"#7caaff"},
+ {id:"history_window",label:"History window",color:"#ce9cff"},
+ {id:"delayed_input_tap",label:"Delayed tap",color:"#f2de85"},
+ {id:"majority",label:"Majority",color:"#9aaabd"}
+];
+const pct=x=>typeof x==="number"&&Number.isFinite(x)?(100*x).toFixed(1)+"%":"—";
+const integer=x=>Number.isFinite(x)?x.toLocaleString():"—";
+let report=null;
+function status(message){$("status").textContent=message}
+function validate(data){
+ if(!data || data.schema_version!=="4.0" || data.task!=="noise_delay_memory_robustness" ||
+    data.substrate!=="software_simulation" || !data.configuration ||
+    !Array.isArray(data.summary) || data.summary.length>500 || !Array.isArray(data.runs) || data.runs.length>10000)throw Error("Expected Phase 4 simulated-memory JSON report");
+ for(const row of data.summary){
+  if(!Number.isInteger(row.delay) || !Number.isFinite(row.noise) || !row.metrics)throw Error("Bad summary row");
+  for(const m of models){
+   const v=row.metrics[m.id];
+   if(!v||!Number.isFinite(v.mean)||v.mean<0||v.mean>1||!Number.isFinite(v.population_stdev)||v.population_stdev<0||v.population_stdev>1)throw Error("Invalid summary metric");
+  }
+ }
+ for(const row of data.runs){
+  if(!Number.isInteger(row.seed)||!Number.isFinite(row.noise)||!Number.isInteger(row.delay)||!row.work_proxies||!row.samples||!row.metrics)throw Error("Bad run");
+  if(!models.every(m=>Number.isFinite(row.metrics[m.id])&&row.metrics[m.id]>=0&&row.metrics[m.id]<=1))throw Error("Bad run accuracy");
+ }
+ return data;
+}
+function cell(row,value){const node=document.createElement("td");node.textContent=String(value);row.append(node)}
+function legend(){
+ $("legend").replaceChildren();
+ for(const m of models){
+  const label=document.createElement("label"),check=document.createElement("input"),swatch=document.createElement("i");
+  check.type="checkbox";check.checked=true;check.id="model-"+m.id;check.addEventListener("change",render);
+  swatch.style.background=m.color;label.append(check,swatch,document.createTextNode(m.label));$("legend").append(label);
+ }
+}
+function selectedNoise(){return Number($("noise").value)}
+function render(){
+ if(!report)return;
+ const noise=selectedNoise(),group=report.summary.filter(row=>row.noise===noise).sort((a,b)=>a.delay-b.delay);
+ $("ceiling").textContent=pct(1-noise)+" theoretical single-bit Bayes accuracy";
+ const means=$("means");means.replaceChildren();
+ for(const row of group){
+  const tr=document.createElement("tr");cell(tr,row.delay);
+  for(const m of models){const stat=row.metrics[m.id];cell(tr,pct(stat.mean)+" ± "+pct(stat.population_stdev))}
+  means.append(tr);
+ }
+ const runs=$("runs");runs.replaceChildren();
+ for(const row of report.runs.filter(row=>row.noise===noise)){
+  const tr=document.createElement("tr");[row.seed,pct(row.noise),row.delay,row.samples.train,row.samples.test,
+   pct(row.metrics.spiking_recurrent),pct(row.metrics.history_window),pct(row.metrics.delayed_input_tap)].forEach(v=>cell(tr,v));runs.append(tr);
+ }
+ const costRows=$("costs");costRows.replaceChildren();
+ const reference=report.runs.find(row=>row.noise===noise);
+ if(reference){
+  for(const m of models){
+   const p=reference.work_proxies[m.id],tr=document.createElement("tr");
+   cell(tr,m.label);
+   for(const key of ["feature_dimensions","trainable_readout_parameters","readout_coefficient_update_slots","reservoir_neuron_state_updates","dense_recurrent_pair_scans"])cell(tr,integer(p[key]));
+   costRows.append(tr);
+  }
+ }
+ draw(group);
+}
+function draw(rows){
+ const canvas=$("chart"),ctx=canvas.getContext("2d"),w=canvas.width,h=canvas.height,left=62,right=w-22,top=25,bottom=h-52;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#0b1728";ctx.fillRect(0,0,w,h);
+ ctx.font="14px system-ui";ctx.fillStyle="#b4c4d3";ctx.strokeStyle="#33485e";ctx.lineWidth=1;
+ for(let i=0;i<=5;i++){
+  const y=bottom-(bottom-top)*i/5;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();ctx.fillText((i*20)+"%",8,y+5);
+ }
+ if(!rows.length)return;
+ const minDelay=rows[0].delay,maxDelay=rows[rows.length-1].delay;
+ const x=d=>left+(d-minDelay)/Math.max(1,maxDelay-minDelay)*(right-left);
+ const y=p=>bottom-Math.max(0,Math.min(1,p))*(bottom-top);
+ for(const row of rows){ctx.fillStyle="#b4c4d3";ctx.fillText(String(row.delay),x(row.delay)-5,bottom+23)}
+ for(const m of models){
+  if(!$("model-"+m.id).checked)continue;
+  ctx.strokeStyle=m.color;ctx.fillStyle=m.color;ctx.lineWidth=2.5;ctx.beginPath();
+  rows.forEach((row,i)=>{const px=x(row.delay),py=y(row.metrics[m.id].mean);if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)});
+  ctx.stroke();
+  rows.forEach(row=>{
+   const px=x(row.delay),stat=row.metrics[m.id],low=y(stat.mean-stat.population_stdev),high=y(stat.mean+stat.population_stdev);
+   ctx.beginPath();ctx.moveTo(px,low);ctx.lineTo(px,high);ctx.moveTo(px-4,low);ctx.lineTo(px+4,low);ctx.moveTo(px-4,high);ctx.lineTo(px+4,high);ctx.stroke();
+   ctx.beginPath();ctx.arc(px,y(stat.mean),4,0,Math.PI*2);ctx.fill();
+  });
+ }
+ ctx.fillStyle="#b4c4d3";ctx.fillText("Input delay (steps)",(left+right)/2-65,h-12);
+}
+function mount(data){
+ report=validate(data);
+ $("seeds").textContent=report.configuration.seeds.length;
+ $("noises").textContent=report.configuration.noise_levels.length;
+ $("delays").textContent=report.configuration.delays.join(", ");
+ $("window").textContent=report.configuration.window_size;
+ $("limitations").textContent=Array.isArray(report.limitations)?report.limitations.join(" "):"Purely digital research.";
+ const select=$("noise");select.replaceChildren();
+ for(const value of report.configuration.noise_levels){
+  const option=document.createElement("option");option.value=String(value);option.textContent=pct(value);select.append(option);
+ }
+ select.disabled=false;select.onchange=render;
+ status("LOADED "+report.runs.length+" RUNS");render();
+}
+async function loadLocal(){
+ try{
+  const response=await fetch("./robustness-report.json",{cache:"no-store"});
+  if(!response.ok)throw Error("No locally generated report");
+  mount(await response.json());
+ }catch(error){status("CHOOSE A REPORT JSON");}
+}
+$("file").addEventListener("change",async event=>{
+ const f=event.target.files[0];if(!f)return;
+ try{mount(JSON.parse(await f.text()))}catch(error){status("ERROR: "+error.message)}
+});
+$("reload").addEventListener("click",loadLocal);
+legend();loadLocal();
+</script>
+</body>
+</html>

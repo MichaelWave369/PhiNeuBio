@@ -43,13 +43,24 @@ Open [Memory Benchmark Lab](http://localhost:8000/dashboard/benchmark.html) to e
 
 Read [Phase 3 protocol and limitations](docs/BENCHMARKS.md). The tapped-delay control has explicit memory and is *supposed* to be a tough comparison.
 
+## Phase 4: robustness and computational-work comparisons
+
+Challenge the spiking reservoir with a conventional sliding input-history window and independently noisy bits. All six models receive paired train/test data across random seeds, noise levels and input delays.
+
+    python -m phineubio.robustness --json-output dashboard/robustness-report.json --csv-output robustness-results.csv
+    python -m http.server 8000
+
+Open [Robustness Lab](http://localhost:8000/dashboard/robustness.html) for interactive accuracy-versus-delay curves, noise filters, individual seeded results, and **analytical work descriptors**. These are not CPU benchmarks, electricity measurements or a biological experiment.
+
+Read [Phase 4 research protocol](docs/ROBUSTNESS.md).
+
 ## Run tests
 
 Requires Python 3.10+, no third-party runtime packages.
 
     python -m unittest discover -s tests -v
 
-GitHub Actions validates tests and all three JSON experiment entry points with Python 3.10 and 3.12.
+GitHub Actions validates tests and all four JSON experiment entry points with Python 3.10 and 3.12.
 
 ## Research principles
 
@@ -59,14 +70,15 @@ GitHub Actions validates tests and all three JSON experiment entry points with P
 4. **Protect future experiments.** Any biological hardware adapter must be explicitly optional and independently safety- and ethics-reviewed.
 5. **Integrate by contract.** PhiStream, PhiMemory9, and CompAware can consume versioned reports without coupling their runtimes.
 
-See [Architecture](docs/ARCHITECTURE.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
+See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
 
 ## Status
 
 - Phase 1: software-only spiking reservoir and delayed-memory benchmark
 - Phase 2: closed-loop binary-feedback learning, JSON traces, and local activity dashboard
 - Phase 3: paired seed sweeps, stronger baselines, controlled noise and delay benchmarks
-- Phase 4 (proposed): temporal-noise robustness, input-history controls, operation-count accounting
+- Phase 4: paired noise sweeps, conventional input-window controls, and analytical computational-work descriptors
+- Phase 5 (proposed): real runtime profiling, RNN comparators, temporally redundant signals
 - Research-only future: opt-in external biological hardware adapters following safety review
 
 Licensed under [MIT](LICENSE).
