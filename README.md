@@ -32,13 +32,24 @@ Open [ΦNeuBio Activity Lab](http://localhost:8000/dashboard/) in your browser. 
 
 The viewer is an **animated trace replay**, not a live recording of biological neurons. For protocol and interpretation, read [Phase 2 experiment notes](docs/FEEDBACK.md).
 
+## Phase 3: controlled memory benchmarks
+
+Compare recurrent spiking models against nonrecurrent controls, simple logistic baselines, and explicit digital delay memory across multiple seeds, delay lengths, and noisy inputs. Results are **descriptive comparisons**, not proof of biological advantage.
+
+    python -m phineubio.benchmarks --json-output dashboard/benchmark-report.json --csv-output benchmark-results.csv
+    python -m http.server 8000
+
+Open [Memory Benchmark Lab](http://localhost:8000/dashboard/benchmark.html) to explore accuracy-by-delay curves and seed variability. You can also choose a JSON report directly from the HTML file picker.
+
+Read [Phase 3 protocol and limitations](docs/BENCHMARKS.md). The tapped-delay control has explicit memory and is *supposed* to be a tough comparison.
+
 ## Run tests
 
 Requires Python 3.10+, no third-party runtime packages.
 
     python -m unittest discover -s tests -v
 
-GitHub Actions validates tests and both JSON experiment entry points with Python 3.10 and 3.12.
+GitHub Actions validates tests and all three JSON experiment entry points with Python 3.10 and 3.12.
 
 ## Research principles
 
@@ -48,13 +59,14 @@ GitHub Actions validates tests and both JSON experiment entry points with Python
 4. **Protect future experiments.** Any biological hardware adapter must be explicitly optional and independently safety- and ethics-reviewed.
 5. **Integrate by contract.** PhiStream, PhiMemory9, and CompAware can consume versioned reports without coupling their runtimes.
 
-See [Architecture](docs/ARCHITECTURE.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), and [Research/ethics boundaries](docs/ETHICS.md).
+See [Architecture](docs/ARCHITECTURE.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
 
 ## Status
 
 - Phase 1: software-only spiking reservoir and delayed-memory benchmark
 - Phase 2: closed-loop binary-feedback learning, JSON traces, and local activity dashboard
-- Phase 3 (proposed): seed sweeps, stronger baselines, controlled noise and delay benchmarks
+- Phase 3: paired seed sweeps, stronger baselines, controlled noise and delay benchmarks
+- Phase 4 (proposed): temporal-noise robustness, input-history controls, operation-count accounting
 - Research-only future: opt-in external biological hardware adapters following safety review
 
 Licensed under [MIT](LICENSE).
