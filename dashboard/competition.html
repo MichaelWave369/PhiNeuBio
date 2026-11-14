@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="PhiNeuBio Phase 6 experiment: trained recurrent neural network compared with spiking and conventional memory models">
+<title>ΦNeuBio | Adaptive Neural Competition</title>
+<style>
+:root{color-scheme:dark;--bg:#090f1b;--pane:#152137;--line:#30425c;--ink:#edf6fc;--muted:#aabdcf;--cyan:#59e8d2}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 70% 0%,#203b4b,transparent 40%),var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1190px;margin:auto;padding:30px 18px 65px}
+header{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+h1{font-size:clamp(30px,4.5vw,45px);letter-spacing:-.04em;line-height:1.2;margin:8px 0}h2{font-size:19px;margin:0 0 5px}
+p,small{color:var(--muted)}p{margin:8px 0}a{color:var(--cyan)}
+.kicker{font-size:12px;font-weight:800;letter-spacing:.16em;color:var(--cyan)}
+.panel{background:var(--pane);border:1px solid var(--line);border-radius:13px;padding:18px;margin:14px 0}
+.controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+button,.file,select{font:inherit;color:var(--ink);background:#25405b;padding:9px 12px;border-radius:8px;border:1px solid #59748b;cursor:pointer}
+.file input{display:none}button:focus-visible,.file:focus-within,select:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+#status{font-size:12px;color:var(--cyan)}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.stat{background:#0d192b;border-radius:9px;padding:13px}.stat b{display:block;font-size:25px;font-variant-numeric:tabular-nums}
+.columns{display:grid;grid-template-columns:2fr 1fr;gap:14px}.graph{width:100%;height:auto;background:#0a1727;border-radius:8px}
+.legend{display:flex;gap:8px 15px;flex-wrap:wrap;font-size:12px;margin:12px 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.scroll{overflow:auto}table{width:100%;white-space:nowrap;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;border-bottom:1px solid var(--line);padding:10px;font-variant-numeric:tabular-nums}
+th{color:#c9dae6}code{color:var(--cyan);overflow-wrap:anywhere}.note{font-size:13px}
+@media(max-width:850px){.columns{grid-template-columns:1fr}}@media(max-width:530px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body><main>
+<header><div><div class="kicker">PHI369 LABS / PHASE 6</div><h1>ΦNeuBio Adaptive Competition</h1>
+<p>Fully trainable tanh RNN, fixed spiking reservoirs, and honest software-memory controls.</p></div>
+<nav><a href="./index.html">Activity</a> · <a href="./benchmark.html">Memory</a> · <a href="./robustness.html">Robustness</a> · <a href="./temporal.html">Temporal</a></nav></header>
+<div class="panel controls">
+<label class="file">Choose Phase 6 JSON<input type="file" id="file" accept=".json,application/json"></label>
+<button id="load">Load local report</button><span id="status" role="status" aria-live="polite">NO REPORT LOADED</span>
+</div>
+<div class="panel stats">
+<div class="stat"><small>Seeds</small><b id="seeds">—</b></div>
+<div class="stat"><small>Network width</small><b id="neurons">—</b></div>
+<div class="stat"><small>Training epochs</small><b id="epochs">—</b></div>
+<div class="stat"><small>Experiments</small><b id="count">—</b></div>
+</div>
+<div class="columns">
+<section class="panel"><div class="controls" style="justify-content:space-between">
+<h2>Held-out accuracy comparison</h2>
+<label for="noise">Noise <select id="noise" disabled><option>Load report</option></select></label>
+<label for="delay">Delay <select id="delay" disabled><option>Load report</option></select></label></div>
+<div class="legend" id="legend"></div>
+<canvas class="graph" id="accuracy" width="920" height="420" role="img" aria-label="Accuracy of trained RNN and digital memory models on held-out data"></canvas>
+<p class="note">Mean accuracy across seeds; all models receive identical train/test input sequences.</p>
+</section>
+<aside class="panel"><h2>What makes this different?</h2>
+<p><b>Trained RNN:</b> recurrence, input projection and output layer learn from whole sequences using backpropagation through time (BPTT).</p>
+<p><b>Spiking LIF and tanh reservoirs:</b> internal recurrent connections stay fixed; only the output readouts learn.</p>
+<p><b>Explicit memory:</b> the history window and delayed tap directly store older observed inputs. They may be simpler and better.</p>
+<p class="note" id="limitations">This is software simulation. No claims about biological neurons, consciousness or electrical energy.</p>
+</aside>
+</div>
+<div class="columns">
+<section class="panel"><h2>Trainable RNN learning curve</h2>
+<p class="note">Per-epoch mean sequence cross-entropy for one seed and the selected noise/delay. It is training loss, not test accuracy.</p>
+<div class="controls"><label for="seed">Seed <select id="seed" disabled><option>Load report</option></select></label><small id="parameters">—</small></div>
+<canvas class="graph" id="loss" width="920" height="270" role="img" aria-label="Training cross-entropy loss for the trainable RNN"></canvas>
+</section>
+<aside class="panel"><h2>Experiment boundaries</h2>
+<p>The network hidden widths match, but parameters, training schedules, and computational budgets do not. Results are exploratory, not proof of architectural superiority.</p>
+<p>Python elapsed-time and tracked-allocation readings are environment-specific diagnostics, not energy use or apples-to-apples hardware benchmarks.</p></aside>
+</div>
+<section class="panel"><h2>Mean held-out test accuracy</h2>
+<div class="scroll"><table><thead><tr><th>Model</th><th>Mean</th><th>Population SD</th><th>Difference vs trained RNN</th></tr></thead><tbody id="results"><tr><td colspan="4">No results.</td></tr></tbody></table></div>
+</section>
+<section class="panel"><h2>Measured Python total elapsed time</h2>
+<p class="note">Means across seed runs; different models perform different training operations. Do not interpret as a fair hardware speed ranking.</p>
+<div class="scroll"><table><thead><tr><th>Model</th><th>Mean elapsed (ms)</th><th>Mean peak tracked allocations (KiB)</th></tr></thead><tbody id="profiles"><tr><td colspan="3">No results.</td></tr></tbody></table></div>
+</section>
+<section class="panel note"><strong>Reproduce</strong>
+<p><code>python -m phineubio.competition --json-output dashboard/competition-report.json --csv-output competition-results.csv</code></p>
+<p>Then <code>python -m http.server 8000</code>, or open this HTML directly and choose the JSON. Works without third-party JavaScript and does not transmit data.</p>
+</section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const models=[
+{id:"trained_rnn",label:"Trainable RNN",color:"#59e8d2"},
+{id:"spiking_lif",label:"Spiking LIF",color:"#ffb77a"},
+{id:"tanh_reservoir",label:"Fixed tanh",color:"#7faaff"},
+{id:"history_window",label:"History window",color:"#cb9eff"},
+{id:"delayed_tap",label:"Delayed tap",color:"#f0dd88"},
+{id:"majority",label:"Majority",color:"#9eafc0"}
+];
+const pct=x=>Number.isFinite(x)?(x*100).toFixed(1)+"%":"—";
+const avg=values=>values.reduce((sum,value)=>sum+value,0)/values.length;
+let report=null;
+function status(message){$("status").textContent=message}
+function validate(data){
+ if(!data||data.schema_version!=="6.0"||data.substrate!=="software_simulation"||
+    data.task!=="trainable_recurrent_memory_comparison"||!data.configuration||
+    !Array.isArray(data.runs)||!Array.isArray(data.summary)||data.runs.length>20000||
+    data.summary.length>1000)throw Error("Expected a Phase 6 PhiNeuBio JSON report");
+ for(const row of data.runs){
+  if(!row.metrics||!row.profiling||!row.trained_rnn||!Number.isFinite(row.noise)||!Number.isInteger(row.delay)||
+     !models.every(m=>Number.isFinite(row.metrics[m.id])&&row.metrics[m.id]>=0&&row.metrics[m.id]<=1&&
+       row.profiling[m.id]&&Number.isFinite(row.profiling[m.id].total_ns)))throw Error("Invalid run");
+ }
+ for(const row of data.summary){
+  if(!row.metrics||!models.every(m=>row.metrics[m.id]&&
+     Number.isFinite(row.metrics[m.id].mean)&&Number.isFinite(row.metrics[m.id].population_stdev)))throw Error("Invalid summary");
+ }
+ return data;
+}
+function cell(tr,value){const td=document.createElement("td");td.textContent=String(value);tr.append(td)}
+function legend(){
+ for(const m of models){const span=document.createElement("span");const dot=document.createElement("i");dot.style.background=m.color;
+ span.append(dot,document.createTextNode(m.label));$("legend").append(span);}
+}
+function drawBars(summary){
+ const c=$("accuracy"),ctx=c.getContext("2d"),w=c.width,h=c.height,l=54,r=w-18,t=18,b=h-62;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#0a1727";ctx.fillRect(0,0,w,h);ctx.font="13px system-ui";ctx.fillStyle="#b4c6d4";ctx.strokeStyle="#30465e";
+ for(let k=0;k<=5;k++){const y=b-k*(b-t)/5;ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(r,y);ctx.stroke();ctx.fillText((k*20)+"%",4,y+4);}
+ const cellWidth=(r-l)/models.length;
+ models.forEach((model,i)=>{const x=l+(i+.18)*cellWidth;const v=summary.metrics[model.id].mean;const height=(b-t)*Math.max(0,Math.min(1,v));
+  ctx.fillStyle=model.color;ctx.fillRect(x,b-height,cellWidth*.64,height);
+  ctx.font="13px system-ui";ctx.fillStyle="#eef6fc";ctx.fillText(pct(v),x,b-height-7);
+  ctx.fillText(model.label.split(" ")[0],x,b+22);
+ });
+}
+function drawLoss(values){
+ const c=$("loss"),ctx=c.getContext("2d"),w=c.width,h=c.height,l=55,r=w-25,t=20,b=h-43;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#0a1727";ctx.fillRect(0,0,w,h);
+ if(!values||!values.length)return;
+ const min=Math.min(...values),max=Math.max(...values),range=Math.max(.01,max-min);
+ ctx.strokeStyle="#33475f";ctx.fillStyle="#b5c7d5";ctx.font="14px system-ui";
+ for(let k=0;k<4;k++){const y=t+(b-t)*k/3;ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(r,y);ctx.stroke();ctx.fillText((max-range*k/3).toFixed(3),5,y+4);}
+ ctx.strokeStyle="#59e8d2";ctx.lineWidth=3;ctx.beginPath();
+ values.forEach((v,i)=>{const x=l+(r-l)*i/Math.max(1,values.length-1),y=t+(b-t)*(max-v)/range;
+  if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();
+ ctx.fillStyle="#b5c7d5";ctx.fillText("Epoch 1",l,b+23);ctx.fillText("Epoch "+values.length,r-73,b+23);
+}
+function render(){
+ if(!report)return;
+ const noise=Number($("noise").value),delay=Number($("delay").value),seed=Number($("seed").value);
+ const summary=report.summary.find(row=>row.noise===noise&&row.delay===delay);
+ const runs=report.runs.filter(row=>row.noise===noise&&row.delay===delay);
+ if(!summary||!runs.length){status("FILTER COMBINATION MISSING");return;}
+ drawBars(summary);
+ const tbody=$("results");tbody.replaceChildren();
+ for(const model of models){const stat=summary.metrics[model.id],tr=document.createElement("tr");
+ cell(tr,model.label);cell(tr,pct(stat.mean));cell(tr,pct(stat.population_stdev));
+ cell(tr,((stat.mean-summary.metrics.trained_rnn.mean)*100).toFixed(1)+" pp");tbody.append(tr);}
+ const table=$("profiles");table.replaceChildren();
+ for(const model of models){const entries=runs.map(row=>row.profiling[model.id]);const tr=document.createElement("tr");
+ cell(tr,model.label);
+ cell(tr,(avg(entries.map(v=>v.total_ns))/1e6).toFixed(2));
+ cell(tr,(avg(entries.map(v=>v.peak_traced_python_bytes))/1024).toFixed(1));table.append(tr);}
+ const selected=runs.find(row=>row.seed===seed)||runs[0];
+ $("parameters").textContent=selected.trained_rnn.trainable_parameters+" trainable RNN parameters";
+ drawLoss(selected.trained_rnn.training_loss_by_epoch);
+}
+function mount(data){
+ report=validate(data);
+ $("seeds").textContent=report.configuration.seeds.length;
+ $("neurons").textContent=report.configuration.neurons;
+ $("epochs").textContent=report.configuration.epochs;
+ $("count").textContent=report.runs.length;
+ $("limitations").textContent=Array.isArray(report.limitations)?report.limitations.join(" "):"Simulation only.";
+ for(const [id,values,format] of [["noise",report.configuration.noise_levels,pct],
+ ["delay",report.configuration.delays,String],["seed",report.configuration.seeds,String]]){
+  const select=$(id);select.replaceChildren();
+  for(const value of values){const option=document.createElement("option");option.value=String(value);option.textContent=format(value);select.append(option);}
+  select.disabled=false;select.onchange=render;
+ }
+ status("LOADED "+report.runs.length+" EXPERIMENTS");render();
+}
+async function loadLocal(){
+ try{const r=await fetch("./competition-report.json",{cache:"no-store"});
+ if(!r.ok)throw Error("No local report found");mount(await r.json());}
+ catch(error){status("CHOOSE A PHASE 6 REPORT");}
+}
+$("file").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;
+ try{mount(JSON.parse(await file.text()));}catch(error){status("ERROR: "+error.message);}});
+$("load").addEventListener("click",loadLocal);
+legend();loadLocal();
+</script>
+</body></html>
