@@ -70,3 +70,12 @@ jobs:
         run: |
           python -c "from pathlib import Path; h=Path('dashboard/competition.html').read_text(); Path('competition-check.js').write_text(h.split('<script>',1)[1].split('</script>',1)[0])"
           node --check competition-check.js
+      - name: Validate Phase 7 GRU report and independent selection
+        run: |
+          python -m phineubio.validation --seed-count 1 --delays 1 --noise-levels 0 --train-sequences 3 --validation-sequences 2 --test-sequences 2 --sequence-length 10 --burn-in 3 --epochs 2 --parameter-budget 55 --json-output dashboard/validation-report.json --csv-output validation-results.csv
+          python -m json.tool dashboard/validation-report.json > /dev/null
+          python -c "import csv,json; d=json.load(open('dashboard/validation-report.json')); assert d['schema_version']=='7.0'; assert len(d['runs'])==1; assert all(r['selection'][m]['selected_learning_rate'] in d['configuration']['learning_rates'] for r in d['runs'] for m in ['trainable_gru','trainable_elman']); assert len(list(csv.DictReader(open('validation-results.csv'))))==1"
+      - name: Check Phase 7 dashboard JavaScript syntax
+        run: |
+          python -c "from pathlib import Path; h=Path('dashboard/validation.html').read_text(); Path('validation-check.js').write_text(h.split('<script>',1)[1].split('</script>',1)[0])"
+          node --check validation-check.js

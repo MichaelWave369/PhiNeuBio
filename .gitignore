@@ -18,3 +18,5 @@ dashboard/temporal-report.json
 temporal-results.csv
 dashboard/competition-report.json
 competition-results.csv
+dashboard/validation-report.json
+validation-results.csv
