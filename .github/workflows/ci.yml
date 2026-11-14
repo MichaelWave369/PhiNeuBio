@@ -1,0 +1,27 @@
+name: Phase 1 CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  simulation-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run standard-library tests
+        run: python -m unittest discover -s tests -v
+      - name: Validate experiment report
+        run: |
+          python -m phineubio --train-sequences 4 --test-sequences 2 --sequence-length 16 --epochs 3 > experiment-report.json
+          python -m json.tool experiment-report.json > /dev/null
