@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ΦNeuBio Phase 8 controlled validation and signal-family comparisons">
+<title>ΦNeuBio | Fairness Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#090f1d;--panel:#142237;--line:#31455d;--text:#eff7fb;--soft:#b7c5d3;--mint:#60e5d3}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 70% 0%,#244453,transparent 44%),var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{width:min(1180px,calc(100% - 34px));margin:auto;padding:30px 0 64px}
+header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.15;margin:8px 0;letter-spacing:-.04em}h2{font-size:19px;margin:0 0 7px}
+p,small{color:var(--soft)}p{margin:8px 0}a{color:var(--mint)}
+.kicker{font-size:12px;letter-spacing:.18em;font-weight:800;color:var(--mint)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+button,.file,select{font:inherit;color:var(--text);background:#24415c;border:1px solid #4e708c;border-radius:8px;padding:9px 12px;cursor:pointer}
+.file input{display:none}button:focus-visible,.file:focus-within,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}
+#status{color:var(--mint);font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:#0b192a;border-radius:9px;padding:12px}.stat b{display:block;font-size:25px;font-variant-numeric:tabular-nums}
+.columns{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:14px}
+canvas{background:#0b192a;width:100%;height:auto;border-radius:9px;display:block}
+.scroll{max-width:100%;overflow:auto}
+table{border-collapse:collapse;width:100%;white-space:nowrap;font-size:13px}
+th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;font-variant-numeric:tabular-nums}
+th{color:#d0dfeb}.note{font-size:13px}code{color:var(--mint);overflow-wrap:anywhere}
+@media(max-width:880px){.columns{grid-template-columns:1fr}}@media(max-width:530px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head><body><main>
+<header>
+<div><div class="kicker">PHI369 LABS / PHASE 8</div><h1>ΦNeuBio Fairness Lab</h1><p>Independently tuned model readouts, two signal families, separate profiling probes.</p></div>
+<nav><a href="./index.html">Activity</a> · <a href="./competition.html">Competition</a> · <a href="./validation.html">Validation</a></nav>
+</header>
+<section class="panel controls" aria-label="Load experiment report">
+<label class="file">Choose Phase 8 JSON<input id="file" type="file" accept=".json,application/json"></label>
+<button id="load">Load local report</button><span id="status" role="status" aria-live="polite">NO REPORT</span>
+</section>
+<section class="panel stats">
+<div class="stat"><small>Signal families</small><b id="families">—</b></div>
+<div class="stat"><small>Independent seeds</small><b id="seeds">—</b></div>
+<div class="stat"><small>Validation sequences</small><b id="validation">—</b></div>
+<div class="stat"><small>Probe repeats</small><b id="repeats">—</b></div>
+</section>
+<section class="columns">
+<div class="panel">
+<div class="controls" style="justify-content:space-between"><h2>Held-out model accuracy</h2>
+<label>Signal <select id="signal" disabled><option>Load report</option></select></label>
+<label>Noise <select id="noise" disabled><option>Load report</option></select></label>
+<label>Delay <select id="delay" disabled><option>Load report</option></select></label>
+</div>
+<canvas id="chart" width="950" height="400" role="img" aria-label="Held-out accuracy comparison across seven digital models"></canvas>
+<p class="note">Mean across the selected seeds. Population standard deviation and exact results are listed in the table.</p>
+</div>
+<aside class="panel">
+<h2>What changed in Phase 8?</h2>
+<p>All six trainable model readouts, including those attached to <b>fixed spiking and tanh reservoirs</b>, choose from the same declared learning-rate grid using validation data.</p>
+<p>A separate profiling probe permits repeated local inference timing without selecting settings from final-test results.</p>
+<p>This still isn't a matched-compute contest. Fixed recurrent matrices, learnable parameter counts, and implementation costs differ.</p>
+<p class="note" id="limits">Software-only demonstration. No consciousness or real tissue claims.</p>
+</aside>
+</section>
+<div class="columns">
+<section class="panel">
+<h2>Independent test accuracy</h2>
+<div class="scroll"><table><thead><tr><th>Model</th><th>Mean</th><th>Population SD</th><th>Relative to GRU</th></tr></thead><tbody id="results"><tr><td colspan="4">No report loaded.</td></tr></tbody></table></div>
+</section>
+<aside class="panel">
+<h2>Selected settings</h2>
+<div class="controls"><label>Seed <select id="seed" disabled><option>Load report</option></select></label></div>
+<div class="scroll"><table><thead><tr><th>Model</th><th>Selected LR</th><th>Validation BCE</th></tr></thead><tbody id="selected"><tr><td colspan="3">No data.</td></tr></tbody></table></div>
+</aside>
+</div>
+<section class="panel">
+<h2>Independent inference-probe timing</h2>
+<p class="note">Median of repeated elapsed Python times per model on the selected seed. Timings include fixed-reservoir feature extraction; they exclude training. Not equal-operations or energy comparisons.</p>
+<div class="scroll"><table><thead><tr><th>Model</th><th>Median elapsed (ms)</th><th>Samples / repeat</th><th>Number of repeats</th></tr></thead><tbody id="profiles"><tr><td colspan="4">No data.</td></tr></tbody></table></div>
+</section>
+<section class="panel note"><b>Reproduce</b>
+<p><code>python -m phineubio.fairness --json-output dashboard/fairness-report.json --csv-output fairness-results.csv</code></p>
+<p>Start <code>python -m http.server 8000</code> from the repo root, or open this HTML and choose the JSON file. No CDN assets, telemetry, or cloud calls.</p></section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const models=[
+{id:"trainable_gru",label:"Trainable GRU",color:"#5ce7d3"},
+{id:"trainable_elman",label:"Trainable Elman",color:"#7daaff"},
+{id:"spiking_lif",label:"Spiking LIF",color:"#ffbd7a"},
+{id:"tanh_reservoir",label:"Fixed tanh",color:"#9ed7bb"},
+{id:"history_window",label:"History window",color:"#db9fff"},
+{id:"delayed_tap",label:"Delayed tap",color:"#eeda92"},
+{id:"majority",label:"Majority",color:"#b2bfcb"}
+];
+let report=null;
+const pct=v=>Number.isFinite(v)?(v*100).toFixed(1)+"%":"—";
+function status(v){$("status").textContent=v}
+function validate(d){
+ if(!d||d.schema_version!=="8.0"||d.substrate!=="software_simulation"||
+    d.task!=="validation_tuned_multisignal_comparison"||!d.configuration||
+    !Array.isArray(d.runs)||!Array.isArray(d.summary)||d.runs.length>15000||d.summary.length>2000)throw Error("Expected Phase 8 Fairness report");
+ for(const s of d.summary){
+  if(typeof s.signal_family!=="string"||!Number.isFinite(s.noise)||!Number.isInteger(s.delay)||
+    !s.metrics||!models.every(m=>s.metrics[m.id]&&Number.isFinite(s.metrics[m.id].mean)&&
+    Number.isFinite(s.metrics[m.id].population_stdev)))throw Error("Invalid summary");
+ }
+ for(const r of d.runs){
+  if(!Number.isInteger(r.seed)||!r.metrics||!r.selection||!r.inference_profiling||
+    !models.every(m=>Number.isFinite(r.metrics[m.id])&&r.metrics[m.id]>=0&&r.metrics[m.id]<=1&&
+      r.selection[m.id]&&r.inference_profiling[m.id]&&
+      Number.isFinite(r.inference_profiling[m.id].median_elapsed_ns)))throw Error("Invalid run row");
+ }
+ return d;
+}
+function cell(row,v){const t=document.createElement("td");t.textContent=String(v);row.append(t)}
+function chooser(id,values,format){
+ const s=$(id);s.replaceChildren();
+ for(const v of values){const option=document.createElement("option");option.textContent=format(v);option.value=String(v);s.append(option)}
+ s.disabled=false;s.onchange=render;
+}
+function draw(summary){
+ const c=$("chart"),ctx=c.getContext("2d"),w=c.width,h=c.height,l=54,r=w-17,t=22,b=h-62;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#0b192a";ctx.fillRect(0,0,w,h);
+ ctx.strokeStyle="#324c63";ctx.fillStyle="#adbdcd";ctx.font="13px system-ui";
+ for(let k=0;k<=5;k++){const y=b-(b-t)*k/5;ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(r,y);ctx.stroke();ctx.fillText((k*20)+"%",6,y+4);}
+ const width=(r-l)/models.length;
+ models.forEach((m,i)=>{const value=summary.metrics[m.id].mean,x=l+(i+.18)*width,height=(b-t)*Math.max(0,Math.min(1,value));
+ ctx.fillStyle=m.color;ctx.fillRect(x,b-height,width*.64,height);
+ ctx.fillStyle="#eff7fb";ctx.fillText(pct(value),x,b-height-7);ctx.fillText(m.label.split(" ")[0],x,b+23);});
+}
+function render(){
+ if(!report)return;
+ const family=$("signal").value,noise=Number($("noise").value),delay=Number($("delay").value),seed=Number($("seed").value);
+ const summary=report.summary.find(r=>r.signal_family===family&&r.noise===noise&&r.delay===delay);
+ const row=report.runs.find(r=>r.signal_family===family&&r.noise===noise&&r.delay===delay&&r.seed===seed);
+ if(!summary||!row){status("FILTER COMBINATION MISSING");return;}
+ draw(summary);$("results").replaceChildren();$("selected").replaceChildren();$("profiles").replaceChildren();
+ for(const m of models){
+  const s=summary.metrics[m.id],tr=document.createElement("tr");
+  cell(tr,m.label);cell(tr,pct(s.mean));cell(tr,pct(s.population_stdev));cell(tr,((s.mean-summary.metrics.trainable_gru.mean)*100).toFixed(1)+" pp");$("results").append(tr);
+  const selected=row.selection[m.id],srow=document.createElement("tr");
+  cell(srow,m.label);cell(srow,selected.selected_learning_rate===null?"N/A":selected.selected_learning_rate);
+  cell(srow,selected.validation_cross_entropy===null?"N/A":selected.validation_cross_entropy.toFixed(4));$("selected").append(srow);
+  const p=row.inference_profiling[m.id],prow=document.createElement("tr");
+  cell(prow,m.label);cell(prow,(p.median_elapsed_ns/1e6).toFixed(3));cell(prow,p.retained_samples_per_repeat);
+  cell(prow,p.elapsed_ns.length);$("profiles").append(prow);
+ }
+}
+function mount(d){
+ report=validate(d);
+ const c=report.configuration;
+ $("families").textContent=c.signal_families.length;$("seeds").textContent=c.seeds.length;
+ $("validation").textContent=c.validation_sequences;$("repeats").textContent=c.inference_repeats;
+ $("limits").textContent=(report.limitations||[]).join(" ");
+ chooser("signal",c.signal_families,String);chooser("noise",c.noise_levels,pct);
+ chooser("delay",c.delays,String);chooser("seed",c.seeds,String);
+ status("LOADED "+report.runs.length+" PAIRED EXPERIMENTS");render();
+}
+async function loadLocal(){try{
+ const res=await fetch("./fairness-report.json",{cache:"no-store"});
+ if(!res.ok)throw Error("No local JSON");
+ mount(await res.json());
+}catch(error){status("CHOOSE A PHASE 8 REPORT");}}
+$("file").addEventListener("change",async event=>{
+ const f=event.target.files[0];if(!f)return;
+ try{mount(JSON.parse(await f.text()));}catch(error){status("ERROR: "+error.message)}
+});
+$("load").addEventListener("click",loadLocal);
+loadLocal();
+</script>
+</body></html>

@@ -85,13 +85,24 @@ A pure-Python **trainable GRU** now competes with the Phase 6 trainable Elman RN
 
 Open [Validation Lab](http://localhost:8000/dashboard/validation.html) to compare held-out accuracy, selected hyperparameters and parameter budgets. Read the [Phase 7 methodology](docs/VALIDATION.md).
 
+## Phase 8: validation fairness and multiple signals
+
+**All trainable readouts** now get a validation-selected learning rate. That includes fixed spiking LIF reservoirs, fixed tanh reservoirs, explicit history-window memory, delayed-input controls, and the GRU/Elman models. The new second signal family uses periodic binary templates, alongside first-order Markov streams. The final test remains separate from all tuning.
+
+    python -m phineubio.fairness --json-output dashboard/fairness-report.json --csv-output fairness-results.csv
+    python -m http.server 8000
+
+Open [Fairness Lab](http://localhost:8000/dashboard/fairness.html) for signal/noise/delay comparisons, selected validation parameters, and **repeated inference timing on an independent profiling-only dataset**. Models are not equal compute or equal size; these diagnostics are not energy measurements.
+
+Read the [Phase 8 protocol](docs/FAIRNESS.md).
+
 ## Run tests
 
 Requires Python 3.10+, no third-party runtime packages.
 
     python -m unittest discover -s tests -v
 
-GitHub Actions validates tests and all seven JSON experiment entry points with Python 3.10 and 3.12.
+GitHub Actions validates tests and all eight JSON experiment entry points with Python 3.10 and 3.12.
 
 ## Research principles
 
@@ -101,7 +112,7 @@ GitHub Actions validates tests and all seven JSON experiment entry points with P
 4. **Protect future experiments.** Any biological hardware adapter must be explicitly optional and independently safety- and ethics-reviewed.
 5. **Integrate by contract.** PhiStream, PhiMemory9, and CompAware can consume versioned reports without coupling their runtimes.
 
-See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
+See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Phase 8 fairness](docs/FAIRNESS.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
 
 ## Status
 
@@ -112,7 +123,8 @@ See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md)
 - Phase 5: temporally correlated signals, fixed tanh recurrence comparison, and measured Python profiling
 - Phase 6: trainable recurrent Elman RNN with BPTT, loss curves, and paired held-out comparisons
 - Phase 7: trainable GRU with gradient checks, independent validation selection, and parameter-capped comparisons
-- Phase 8 (proposed): fair readout tuning for fixed reservoirs, new tasks, hardware replication
+- Phase 8: independent validation of fixed readouts, periodic signals, repeated independent-probe timing
+- Phase 9 (proposed): larger predeclared tasks, sample-size curves, paired uncertainty and audited hardware runs
 - Research-only future: opt-in external biological hardware adapters following safety review
 
 Licensed under [MIT](LICENSE).
