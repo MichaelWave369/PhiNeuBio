@@ -47,7 +47,7 @@ class Phase10Tests(unittest.TestCase):
             path.write_text(json.dumps(plan),encoding="utf-8")
             parsed,raw=load_plan(path)
             self.assertEqual(parsed,self.cfg)
-            self.assertEqual(raw,plan)
+            self.assertEqual(raw,json.loads(json.dumps(plan)))
             result=run_study(parsed,raw)
             self.assertEqual(result["plan"],raw)
             plan["comparisons"]=[["spiking_lif","majority"]]
