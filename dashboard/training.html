@@ -1,0 +1,126 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="PhiNeuBio Phase 13 training exposure and selection cost research lab"><title>ΦNeuBio | Learning Cost Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#0a1020;--panel:#18263a;--line:#364e62;--ink:#edf7fc;--muted:#b8c9d5;--mint:#59e8d2}
+*{box-sizing:border-box}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 72% 0%,#225054,transparent 45%),var(--bg);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1200px;margin:auto;padding:27px 18px 68px}header{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+h1{font-size:clamp(31px,5vw,47px);letter-spacing:-.045em;margin:8px 0}h2{font-size:19px;margin:0 0 8px}
+p,small{color:var(--muted)}p{margin:7px 0}a{color:var(--mint)}.kicker{color:var(--mint);font-size:12px;font-weight:800;letter-spacing:.17em}
+.panel{background:var(--panel);border:1px solid var(--line);padding:18px;border-radius:14px;margin:14px 0}
+.row{display:flex;align-items:center;flex-wrap:wrap;gap:12px}button,.picker,select{font:inherit;border:1px solid #58748a;border-radius:8px;padding:9px 12px;background:#27465b;color:var(--ink);cursor:pointer}
+.picker input{display:none}button:focus-visible,.picker:focus-within,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}
+#status{color:var(--mint);font-size:12px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:#0e1b2c;padding:12px;border-radius:9px}.stat b{font-size:24px;display:block;font-variant-numeric:tabular-nums}
+.columns{display:grid;grid-template-columns:minmax(0,2fr) minmax(270px,1fr);gap:14px}
+canvas{display:block;width:100%;height:auto;background:#0d1b2b;border-radius:9px}
+.scroller{overflow:auto;max-width:100%}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:13px}th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}th{color:#cfdfeb}
+.note{font-size:13px}code{color:var(--mint);overflow-wrap:anywhere}
+@media(max-width:860px){.columns{grid-template-columns:1fr}}@media(max-width:540px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><main>
+<header><div><div class="kicker">PHI369 LABS / PHASE 13</div><h1>ΦNeuBio Learning Cost Lab</h1>
+<p>Equal training-target exposures, unequal optimization work. Show both.</p></div><nav><a href="./sweep.html">Budget Sweep</a> · <a href="./compute.html">Compute Lab</a> · <a href="./study.html">Study Protocol</a></nav></header>
+<section class="panel row"><label class="picker">Choose Phase 13 JSON<input id="file" type="file" accept=".json,application/json"></label>
+<button id="load">Load local report</button><span id="status" role="status" aria-live="polite">NO TRAINING REPORT</span></section>
+<section class="panel stats"><div class="stat"><small>Epoch budgets</small><b id="budgets">—</b></div><div class="stat"><small>Paired seeds</small><b id="seeds">—</b></div><div class="stat"><small>Signal families</small><b id="signals">—</b></div><div class="stat"><small>Experiments</small><b id="runs">—</b></div></section>
+<section class="columns"><div class="panel"><div class="row"><h2>Held-out accuracy by training epochs</h2>
+<label>Signal <select id="signal" disabled><option>Load report</option></select></label>
+<label>Noise <select id="noise" disabled><option>Load report</option></select></label>
+<label>Delay <select id="delay" disabled><option>Load report</option></select></label></div>
+<canvas id="chart" width="930" height="440" role="img" aria-label="Mean independent test accuracy over training epoch budgets"></canvas>
+<p class="note">Mean held-out accuracy across paired seeds. This does not represent a general learning curve or statistical confidence interval.</p></div>
+<aside class="panel"><h2>What this measures</h2><p><b>Target presentations:</b> labels encountered across all training candidates and epochs. This is matched across trained models.</p>
+<p><b>Optimizer updates:</b> sequence-level for GRU/Elman, timestep-level for trained readouts. These counts are not matched.</p>
+<p><b>Selection time:</b> Python time for initialization, feature extraction, candidate training and validation scoring. Not electrical energy or pure BPTT time.</p>
+<p>A new <b>switching</b> signal alternates sticky and volatile binary regimes. Still a software-only toy experiment.</p></aside></section>
+<section class="panel"><h2>Accuracy and local learning-rate selection time</h2>
+<div class="scroller"><table><thead><tr><th>Epochs</th><th>Model</th><th>Test accuracy</th><th>Population SD</th><th>Median selection (ms)</th></tr></thead>
+<tbody id="accuracy"><tr><td colspan="5">Load a report.</td></tr></tbody></table></div></section>
+<section class="panel"><div class="row"><h2>Training effort ledger</h2>
+<label>Epoch budget <select id="budget" disabled><option>Load report</option></select></label>
+<label>Seed <select id="seed" disabled><option>Load report</option></select></label></div>
+<div class="scroller"><table><thead><tr><th>Model</th><th>Target presentations</th><th>Optimizer updates</th><th>BPTT steps</th><th>Selected learning rate</th><th>Selection ms</th></tr></thead>
+<tbody id="effort"><tr><td colspan="6">Load a report.</td></tr></tbody></table></div></section>
+<section class="panel note"><b>Reproduce locally</b><p><code>python -m phineubio.training --json-output dashboard/training-report.json --csv-output training-results.csv</code></p>
+<p><code>python -m http.server 8000</code> then open this page, or choose JSON on disk. No external JavaScript libraries or telemetry.</p></section>
+</main><script>
+"use strict";
+const $=id=>document.getElementById(id);
+const models=[
+{id:"trainable_gru",name:"Trainable GRU",color:"#5ce9d2"},
+{id:"trainable_elman",name:"Trainable Elman",color:"#80aaff"},
+{id:"spiking_lif",name:"Spiking LIF",color:"#ffb97d"},
+{id:"tanh_reservoir",name:"Fixed tanh",color:"#a2d6b7"},
+{id:"history_window",name:"History window",color:"#d7a6ff"},
+{id:"delayed_tap",name:"Delayed tap",color:"#f0dd94"},
+{id:"majority",name:"Majority",color:"#a9b9c5"}
+];
+const pct=x=>Number.isFinite(x)?(x*100).toFixed(1)+"%":"—";
+const ms=x=>Number.isFinite(x)?(x/1e6).toFixed(2):"—";
+let report=null;
+function status(s){$("status").textContent=s}
+function validate(data){
+ if(!data||data.schema_version!=="13.0"||data.substrate!=="software_simulation"||
+    data.task!=="training_exposure_and_selection_cost"||!data.configuration||
+    !Array.isArray(data.runs)||!Array.isArray(data.summary)||data.runs.length>2000)throw Error("Expected Phase 13 training report");
+ for(const row of data.runs){
+  if(!row.metrics||!row.selection||!row.training_effort||!models.every(m=>
+    Number.isFinite(row.metrics[m.id])&&row.metrics[m.id]>=0&&row.metrics[m.id]<=1&&
+    row.training_effort[m.id]&&Number.isFinite(row.training_effort[m.id].selection_elapsed_ns)))throw Error("Invalid training run");
+ }
+ return data;
+}
+function chooser(id,values,format){const s=$(id);s.replaceChildren();
+ for(const x of values){const o=document.createElement("option");o.value=String(x);o.textContent=format(x);s.append(o);}
+ s.disabled=false;s.onchange=render;
+}
+function cell(row,v){const td=document.createElement("td");td.textContent=String(v);row.append(td)}
+function draw(rows){
+ const canvas=$("chart"),ctx=canvas.getContext("2d"),w=canvas.width,h=canvas.height,l=58,r=w-25,t=24,b=h-55;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#0d1b2b";ctx.fillRect(0,0,w,h);ctx.font="13px system-ui";ctx.fillStyle="#bdd0df";ctx.strokeStyle="#344f67";
+ for(let k=0;k<=4;k++){const y=b-(b-t)*k/4;ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(r,y);ctx.stroke();ctx.fillText((k*25)+"%",5,y+4);}
+ const x=i=>l+(i+.5)*(r-l)/Math.max(1,rows.length);
+ for(const m of models){
+  ctx.strokeStyle=m.color;ctx.lineWidth=2;ctx.beginPath();
+  rows.forEach((row,i)=>{const p=row.accuracy[m.id].mean,y=b-(b-t)*p;
+   if(i===0)ctx.moveTo(x(i),y);else ctx.lineTo(x(i),y);});ctx.stroke();
+  rows.forEach((row,i)=>{const p=row.accuracy[m.id].mean,y=b-(b-t)*p;
+   ctx.fillStyle=m.color;ctx.beginPath();ctx.arc(x(i),y,4.5,0,Math.PI*2);ctx.fill();});
+ }
+ rows.forEach((row,i)=>{ctx.fillStyle="#e3edf6";ctx.fillText("Epoch "+row.epochs_budget,x(i)-25,b+23);});
+}
+function render(){
+ if(!report)return;
+ const family=$("signal").value,noise=Number($("noise").value),delay=Number($("delay").value);
+ const rows=report.summary.filter(s=>s.signal_family===family&&s.noise===noise&&s.delay===delay)
+    .sort((a,b)=>a.epochs_budget-b.epochs_budget);
+ draw(rows);$("accuracy").replaceChildren();
+ for(const item of rows){for(const m of models){
+  const tr=document.createElement("tr");
+  cell(tr,item.epochs_budget);cell(tr,m.name);cell(tr,pct(item.accuracy[m.id].mean));
+  cell(tr,pct(item.accuracy[m.id].population_stdev));cell(tr,ms(item.median_selection_elapsed_ns[m.id]));
+  $("accuracy").append(tr);
+ }}
+ const chosen=report.runs.find(r=>r.signal_family===family&&r.noise===noise&&r.delay===delay&&
+    r.epochs_budget===Number($("budget").value)&&r.seed===Number($("seed").value));
+ $("effort").replaceChildren();
+ if(chosen){for(const m of models){
+  const e=chosen.training_effort[m.id],s=chosen.selection[m.id],tr=document.createElement("tr");
+  cell(tr,m.name);cell(tr,e.target_presentations);cell(tr,e.optimizer_updates);cell(tr,e.bptt_steps);
+  cell(tr,s.selected_learning_rate===null?"N/A":s.selected_learning_rate);cell(tr,ms(e.selection_elapsed_ns));
+  $("effort").append(tr);
+ }}
+}
+function mount(d){
+ report=validate(d);const c=d.configuration;
+ $("budgets").textContent=c.epochs_budgets.length;$("seeds").textContent=c.seeds.length;
+ $("signals").textContent=c.signal_families.length;$("runs").textContent=d.runs.length;
+ chooser("signal",c.signal_families,String);chooser("noise",c.noise_levels,pct);
+ chooser("delay",c.delays,String);chooser("budget",c.epochs_budgets,String);chooser("seed",c.seeds,String);
+ status("LOADED "+d.runs.length+" TRAINING CONDITIONS");render();
+}
+async function local(){try{const r=await fetch("./training-report.json",{cache:"no-store"});
+ if(!r.ok)throw Error("No local report");mount(await r.json());}catch(err){status("CHOOSE A PHASE 13 REPORT");}}
+$("file").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;
+ try{mount(JSON.parse(await f.text()));}catch(err){status("ERROR: "+err.message);}});
+$("load").addEventListener("click",local);local();
+</script></body></html>
