@@ -1,0 +1,173 @@
+<!doctype html><html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="PhiNeuBio Phase 12 multi-budget operation ledger and memory tradeoffs">
+<title>ΦNeuBio | Budget Sweep Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1423;--panel:#18283b;--line:#395267;--ink:#edf7fb;--muted:#b7c8d5;--mint:#5de2ce}
+*{box-sizing:border-box}body{background:radial-gradient(ellipse at 70% 0%,#20444d,transparent 45%),var(--bg);font:15px/1.5 system-ui,sans-serif;color:var(--ink);margin:0}
+main{max-width:1200px;margin:auto;padding:28px 18px 64px}header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+h1{font-size:clamp(30px,5vw,45px);margin:7px 0 4px;letter-spacing:-.045em}h2{font-size:19px;margin:0 0 6px}p,small{color:var(--muted)}p{margin:8px 0}a{color:var(--mint)}
+.kicker{color:var(--mint);font-size:12px;font-weight:800;letter-spacing:.16em}
+.panel{background:var(--panel);border:1px solid var(--line);padding:18px;border-radius:13px;margin:14px 0}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}button,.picker,select{font:inherit;border:1px solid #638297;border-radius:8px;padding:9px 12px;background:#284661;color:var(--ink);cursor:pointer}
+.picker input{display:none}button:focus-visible,.picker:focus-within,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}
+#status{color:var(--mint);font-size:12px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:#0f1d2b;border-radius:9px;padding:12px}.stat b{display:block;font-size:25px;font-variant-numeric:tabular-nums}
+.columns{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:14px}canvas{background:#0e1c2e;width:100%;height:auto;display:block;border-radius:9px}
+.scroll{overflow:auto;max-width:100%}table{border-collapse:collapse;width:100%;white-space:nowrap;font-size:13px}
+td,th{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;font-variant-numeric:tabular-nums}th{color:#d2e1ea}
+code{color:var(--mint);overflow-wrap:anywhere}.note{font-size:13px}
+@media(max-width:850px){.columns{grid-template-columns:1fr}}@media(max-width:530px){.metrics{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><main>
+<header><div><div class="kicker">PHI369 LABS / PHASE 12</div><h1>ΦNeuBio Budget Sweep Lab</h1>
+<p>Multiple neural-work budgets. Actual spike activity. Independently selected learning rates.</p></div>
+<nav><a href="./compute.html">Compute Lab</a> · <a href="./study.html">Study Protocol</a> · <a href="./audit.html">Evidence Audit</a></nav>
+</header>
+<section class="panel row">
+<label class="picker">Choose Phase 12 JSON<input id="file" type="file" accept=".json,application/json"></label>
+<button id="load">Load local report</button><span id="status" role="status" aria-live="polite">NO SWEEP REPORT</span>
+</section>
+<section class="panel metrics">
+<div class="stat"><small>Work budgets</small><b id="budgets">—</b></div>
+<div class="stat"><small>Paired seeds</small><b id="seeds">—</b></div>
+<div class="stat"><small>Signal families</small><b id="signals">—</b></div>
+<div class="stat"><small>Experiments</small><b id="runs">—</b></div>
+</section>
+<section class="columns">
+<div class="panel">
+<div class="row"><h2>Accuracy vs structural recurrent visits</h2>
+<label>Signal <select id="signal" disabled><option>Load report</option></select></label>
+<label>Noise <select id="noise" disabled><option>Load report</option></select></label>
+<label>Delay <select id="delay" disabled><option>Load report</option></select></label>
+</div>
+<canvas id="chart" width="920" height="470" role="img" aria-label="Recurrent architectures at several structural work budgets"></canvas>
+<p class="note">Outlined points lie on the descriptive Pareto screen. Only recurrent models are compared on this axis. The plot does not measure electrical energy or exact FLOPs.</p>
+</div>
+<aside class="panel">
+<h2>What the ledger counts</h2>
+<p><b>Dense products:</b> scalar products consumed by recurrent and readout computations.</p>
+<p><b>Spike additions:</b> previous-spike conditional weight additions in the LIF implementation, <em>including zero weights</em>.</p>
+<p><b>Nonzero active edges:</b> the subset where the LIF weight is actually nonzero. A potential sparse optimization opportunity, not a measured speedup.</p>
+<p>Each model trains separately at each cap, with the same paired train, validation, test and probe streams.</p>
+</aside>
+</section>
+<section class="panel">
+<h2>Budget-by-budget held-out accuracy</h2>
+<div class="scroll"><table><thead><tr><th>Cap</th><th>GRU</th><th>Elman</th><th>Spiking LIF</th><th>Fixed tanh</th><th>History</th><th>Tap</th><th>Majority</th></tr></thead>
+<tbody id="accuracy"><tr><td colspan="8">Load results.</td></tr></tbody></table></div>
+</section>
+<section class="panel">
+<div class="row"><h2>Per-probe operation ledger</h2>
+<label>Budget <select id="budget" disabled><option>Load report</option></select></label>
+<label>Seed <select id="seed" disabled><option>Load report</option></select></label>
+</div>
+<p class="note">Count categories refer to one complete probe batch on the selected seed, and should not be added together as though they were equivalent CPU instructions.</p>
+<div class="scroll"><table><thead><tr><th>Model</th><th>Recurrent dense products</th><th>Readout products</th><th>LIF spike weight additions</th><th>LIF nonzero edges</th><th>Threshold checks</th></tr></thead>
+<tbody id="ledger"><tr><td colspan="6">Load a result to inspect counts.</td></tr></tbody></table></div>
+</section>
+<section class="panel note">
+<b>Reproduce locally</b>
+<p><code>python -m phineubio.sweep --json-output dashboard/sweep-report.json --csv-output sweep-results.csv</code></p>
+<p><code>python -m http.server 8000</code>, then open this page, or select a saved JSON directly. All measurements originate from the computer running Python, not the browser. No cloud calls or third-party scripts.</p>
+</section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const models=[
+{id:"trainable_gru",name:"GRU",color:"#56e5d0"},
+{id:"trainable_elman",name:"Elman",color:"#83aeff"},
+{id:"spiking_lif",name:"Spiking LIF",color:"#ffbf81"},
+{id:"tanh_reservoir",name:"Fixed tanh",color:"#b2d5b4"},
+{id:"history_window",name:"History",color:"#d7a1f5"},
+{id:"delayed_tap",name:"Delayed tap",color:"#eede93"},
+{id:"majority",name:"Majority",color:"#a4b7c7"}
+];
+let report=null;
+const pct=v=>Number.isFinite(v)?(100*v).toFixed(1)+"%":"—";
+function status(text){$("status").textContent=text}
+function validate(d){
+ if(!d||d.schema_version!=="12.0"||d.task!=="multi_budget_recurrent_work_audit"||
+    d.substrate!=="software_simulation"||!d.configuration||
+    !Array.isArray(d.budgets)||!Array.isArray(d.frontiers)||d.budgets.length>8)throw Error("Expected Phase 12 report");
+ for(const budget of d.budgets){
+  if(!Number.isInteger(budget.budget)||!budget.costs||!Array.isArray(budget.summary)||
+     !Array.isArray(budget.probe_operations)||!Array.isArray(budget.runs))throw Error("Invalid budget");
+  for(const item of budget.probe_operations){
+   if(!item.events||!models.every(m=>item.events[m.id]&&Number.isFinite(item.events[m.id].readout_scalar_products)))throw Error("Invalid ledger");
+  }
+ }
+ return d;
+}
+function cell(row,value){const td=document.createElement("td");td.textContent=String(value);row.append(td)}
+function chooser(id,values,format){
+ const select=$(id);select.replaceChildren();
+ for(const value of values){const option=document.createElement("option");option.value=String(value);option.textContent=format(value);select.append(option);}
+ select.disabled=false;select.onchange=render;
+}
+function chosen(){
+ const family=$("signal").value,noise=Number($("noise").value),delay=Number($("delay").value);
+ return {family,noise,delay};
+}
+function draw(front){
+ const c=$("chart"),ctx=c.getContext("2d"),w=c.width,h=c.height,l=70,r=w-34,t=25,b=h-60;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#0e1c2e";ctx.fillRect(0,0,w,h);
+ const max=Math.max(1,...front.points.map(p=>p.visits))*1.1;
+ ctx.fillStyle="#c5d4df";ctx.strokeStyle="#365169";ctx.font="13px system-ui";
+ for(let i=0;i<=4;i++){
+  const y=b-(b-t)*i/4;ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(r,y);ctx.stroke();ctx.fillText(i*25+"%",9,y+4);
+  const x=l+(r-l)*i/4;ctx.beginPath();ctx.moveTo(x,t);ctx.lineTo(x,b);ctx.stroke();ctx.fillText((max*i/4).toFixed(0),x-8,b+24);
+ }
+ for(const p of front.points){
+  const model=models.find(m=>m.id===p.model),x=l+(r-l)*p.visits/max,y=b-(b-t)*p.accuracy;
+  const selected=front.nondominated.some(q=>q.model===p.model&&q.budget===p.budget);
+  ctx.fillStyle=model.color;ctx.beginPath();ctx.arc(x,y,5.5,0,Math.PI*2);ctx.fill();
+  if(selected){ctx.strokeStyle="#ffffff";ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);ctx.stroke();}
+  ctx.fillStyle="#e9f3f8";ctx.fillText(model.name+" ("+p.budget+")",x+11,y-10);
+ }
+ ctx.fillStyle="#c5d4df";ctx.fillText("Recurrent matrix-entry visits / step",w/2-110,h-12);
+}
+function render(){
+ if(!report)return;
+ const {family,noise,delay}=chosen();
+ const front=report.frontiers.find(f=>f.signal_family===family&&f.noise===noise&&f.delay===delay);
+ if(!front){status("UNKNOWN CONDITION");return;}
+ draw(front);
+ $("accuracy").replaceChildren();
+ for(const budget of report.budgets){
+  const summary=budget.summary.find(s=>s.signal_family===family&&s.noise===noise&&s.delay===delay);
+  if(!summary)continue;
+  const row=document.createElement("tr");cell(row,budget.budget);
+  for(const model of models)cell(row,pct(summary.accuracy[model.id].mean));
+  $("accuracy").append(row);
+ }
+ const active=report.budgets.find(b=>b.budget===Number($("budget").value));
+ const event=active?.probe_operations.find(x=>x.signal_family===family&&x.noise===noise&&x.delay===delay&&x.seed===Number($("seed").value));
+ $("ledger").replaceChildren();
+ if(event){
+  for(const model of models){
+   const v=event.events[model.id],row=document.createElement("tr");
+   cell(row,model.name);cell(row,v.recurrent_dense_scalar_products);
+   cell(row,v.readout_scalar_products);cell(row,v.lif_active_weight_addends);
+   cell(row,v.lif_nonzero_active_edges);cell(row,v.lif_threshold_checks);
+   $("ledger").append(row);
+  }
+ }
+}
+function mount(data){
+ report=validate(data);const c=data.configuration;
+ $("budgets").textContent=c.budgets.length;$("seeds").textContent=c.seeds.length;
+ $("signals").textContent=c.signal_families.length;
+ $("runs").textContent=data.budgets.reduce((sum,b)=>sum+b.runs.length,0);
+ chooser("signal",c.signal_families,String);chooser("noise",c.noise_levels,pct);
+ chooser("delay",c.delays,String);chooser("budget",c.budgets,String);chooser("seed",c.seeds,String);
+ status("LOADED "+data.budgets.length+" BUDGETS");render();
+}
+async function loadLocal(){try{
+ const response=await fetch("./sweep-report.json",{cache:"no-store"});
+ if(!response.ok)throw Error("No local report");mount(await response.json());
+}catch(error){status("CHOOSE A PHASE 12 JSON FILE");}}
+$("file").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;
+ try{mount(JSON.parse(await file.text()));}catch(error){status("ERROR: "+error.message);}});
+$("load").addEventListener("click",loadLocal);loadLocal();
+</script></body></html>

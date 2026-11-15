@@ -28,3 +28,5 @@ dashboard/study-report.json
 study-effects.csv
 dashboard/compute-report.json
 compute-results.csv
+dashboard/sweep-report.json
+sweep-results.csv
