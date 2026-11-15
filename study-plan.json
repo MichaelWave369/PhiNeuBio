@@ -1,0 +1,66 @@
+{
+  "schema_version": "10.0",
+  "research_question": "Across independent random seeds, how do seed-paired architecture differences change as training sequences increase while validation and test data remain fixed?",
+  "configuration": {
+    "seeds": [
+      369,
+      370,
+      371,
+      372,
+      373,
+      374,
+      375,
+      376,
+      377,
+      378
+    ],
+    "train_sizes": [
+      4,
+      8
+    ],
+    "signal_families": [
+      "iid",
+      "markov"
+    ],
+    "delays": [
+      2
+    ],
+    "noise_levels": [
+      0.15
+    ],
+    "stay_probability": 0.85,
+    "period": 6,
+    "validation_sequences": 4,
+    "test_sequences": 4,
+    "probe_sequences": 2,
+    "sequence_length": 24,
+    "burn_in": 6,
+    "epochs": 6,
+    "learning_rates": [
+      0.03,
+      0.1
+    ],
+    "parameter_budget": 95,
+    "inference_repeats": 1,
+    "bootstrap_resamples": 2000,
+    "bootstrap_seed": 369
+  },
+  "comparisons": [
+    [
+      "spiking_lif",
+      "trainable_gru"
+    ],
+    [
+      "spiking_lif",
+      "tanh_reservoir"
+    ],
+    [
+      "spiking_lif",
+      "history_window"
+    ],
+    [
+      "trainable_gru",
+      "history_window"
+    ]
+  ]
+}

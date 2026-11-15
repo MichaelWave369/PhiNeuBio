@@ -108,13 +108,24 @@ Open [Evidence Audit Lab](http://localhost:8000/dashboard/audit.html). The Phase
 
 Read the [Phase 9 statistical limitations and protocol](docs/AUDIT.md).
 
+## Phase 10: sample efficiency, frozen protocol, and multiplicity awareness
+
+Phase 10 adds a committed study plan that repeats the Phase 8 seven-model experiment at multiple **nested training-set sizes**, with the same independent validation/test streams for each seed. It predeclares all four model comparisons and reports seed-paired bootstrap intervals plus exact directional sign tests with **Holm correction across the entire declared family**.
+
+    python -m phineubio.study --plan study-plan.json --output dashboard/study-report.json --csv-output study-effects.csv
+    python -m http.server 8000
+
+Open [Study Protocol Lab](http://localhost:8000/dashboard/study.html) to inspect sample-efficiency curves, unadjusted descriptive intervals and adjusted p-values. The committed plan runs 40 seed-budget-condition experiments and is a CPU-intensive research experiment; CI uses a small smoke case.
+
+Read [Phase 10 study methodology and limits](docs/STUDY.md). The study excludes nondeterministic hardware timings from its reproducible report and **still does not establish equal computational budget, energy efficiency, or biological advantage**.
+
 ## Run tests
 
 Requires Python 3.10+, no third-party runtime packages.
 
     python -m unittest discover -s tests -v
 
-GitHub Actions validates tests and all eight simulation entry points and the Phase 9 audit with Python 3.10 and 3.12.
+GitHub Actions validates tests and all eight simulation entry points, the Phase 9 audit, and Phase 10 study with Python 3.10 and 3.12.
 
 ## Research principles
 
@@ -124,7 +135,7 @@ GitHub Actions validates tests and all eight simulation entry points and the Pha
 4. **Protect future experiments.** Any biological hardware adapter must be explicitly optional and independently safety- and ethics-reviewed.
 5. **Integrate by contract.** PhiStream, PhiMemory9, and CompAware can consume versioned reports without coupling their runtimes.
 
-See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Phase 8 fairness](docs/FAIRNESS.md), [Phase 9 evidence audit](docs/AUDIT.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
+See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Phase 8 fairness](docs/FAIRNESS.md), [Phase 9 evidence audit](docs/AUDIT.md), [Phase 10 study protocol](docs/STUDY.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
 
 ## Status
 
@@ -137,7 +148,8 @@ See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md)
 - Phase 7: trainable GRU with gradient checks, independent validation selection, and parameter-capped comparisons
 - Phase 8: independent validation of fixed readouts, periodic signals, repeated independent-probe timing
 - Phase 9: IID negative control, complete-grid audit, seed-level exploratory bootstrap uncertainty and local runtime provenance
-- Phase 10 (proposed): larger predeclared datasets, power planning, matched budgets, and repeated hardware profiling
+- Phase 10: a predeclared sample-efficiency plan, paired sign tests and family-wide Holm correction
+- Phase 11 (proposed): compute-matched comparisons, power planning and audited hardware profiling
 - Research-only future: opt-in external biological hardware adapters following safety review
 
 Licensed under [MIT](LICENSE).
