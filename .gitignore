@@ -22,3 +22,5 @@ dashboard/validation-report.json
 validation-results.csv
 dashboard/fairness-report.json
 fairness-results.csv
+dashboard/audit-report.json
+audit-effects.csv

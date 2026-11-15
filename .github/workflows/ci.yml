@@ -88,3 +88,13 @@ jobs:
         run: |
           python -c "from pathlib import Path; h=Path('dashboard/fairness.html').read_text(); Path('fairness-check.js').write_text(h.split('<script>',1)[1].split('</script>',1)[0])"
           node --check fairness-check.js
+      - name: Validate Phase 9 IID control and paired evidence audit
+        run: |
+          python -m phineubio.fairness --seed-count 5 --delays 1 --noise-levels 0 --signal-families iid --train-sequences 3 --validation-sequences 2 --test-sequences 2 --probe-sequences 1 --sequence-length 12 --burn-in 3 --epochs 2 --parameter-budget 55 --inference-repeats 1 --json-output dashboard/fairness-report.json
+          python -m phineubio.audit --input dashboard/fairness-report.json --output dashboard/audit-report.json --csv-output audit-effects.csv --resamples 400
+          python -m json.tool dashboard/audit-report.json > /dev/null
+          python -c "import json,csv; a=json.load(open('dashboard/audit-report.json')); s=json.load(open('dashboard/fairness-report.json')); assert a['schema_version']=='9.0'; assert len(a['conditions'])==1; assert all(x['effect']['bootstrap_95_interval'] is not None for x in a['conditions'][0]['comparisons']); assert s['runtime_environment']['python_version']; assert len(list(csv.DictReader(open('audit-effects.csv'))))==4"
+      - name: Check Phase 9 dashboard JavaScript syntax
+        run: |
+          python -c "from pathlib import Path; h=Path('dashboard/audit.html').read_text(); Path('audit-check.js').write_text(h.split('<script>',1)[1].split('</script>',1)[0])"
+          node --check audit-check.js
