@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="PhiNeuBio Phase 14 training-work budget and burst noise laboratory">
+<title>ΦNeuBio | Work Budget Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1424;--panel:#192a3d;--border:#365166;--fg:#f1f9fc;--dim:#b8cbd8;--aqua:#63e8d4}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 68% 0%,#23514f,transparent 46%),var(--bg);color:var(--fg);font:15px/1.52 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1190px;margin:auto;padding:28px 18px 68px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+h1{font-size:clamp(30px,5vw,46px);margin:7px 0 4px;letter-spacing:-.04em}h2{font-size:19px;margin:0 0 8px}
+p,small{color:var(--dim)}p{margin:8px 0}a{color:var(--aqua)}.eyebrow{font-size:12px;letter-spacing:.15em;color:var(--aqua);font-weight:800}
+.panel{border:1px solid var(--border);background:var(--panel);padding:18px;border-radius:13px;margin:14px 0}
+.row{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+button,.file,select{font:inherit;border-radius:8px;border:1px solid #56798e;background:#28475d;color:var(--fg);padding:9px 12px;cursor:pointer}
+.file input{display:none}button:focus-visible,.file:focus-within,select:focus-visible{outline:2px solid var(--aqua);outline-offset:3px}
+#status{font-size:12px;color:var(--aqua)}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.metric{padding:12px;background:#0b1b2c;border-radius:9px}.metric b{display:block;font-size:24px;font-variant-numeric:tabular-nums}
+.columns{display:grid;grid-template-columns:minmax(0,2fr) minmax(265px,1fr);gap:14px}
+canvas{width:100%;height:auto;display:block;background:#0a1a2d;border-radius:9px}
+.scroll{overflow:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;white-space:nowrap;font-size:13px}
+td,th{border-bottom:1px solid var(--border);padding:9px 11px;text-align:left;font-variant-numeric:tabular-nums}
+th{color:#d6e7ed}code{color:var(--aqua);overflow-wrap:anywhere}.note{font-size:13px}
+@media(max-width:870px){.columns{grid-template-columns:1fr}}@media(max-width:530px){.metrics{grid-template-columns:repeat(2,1fr)}}
+</style></head>
+<body><main>
+<header><div><div class="eyebrow">PHI369 LABS / PHASE 14</div><h1>ΦNeuBio Work Budget Lab</h1>
+<p>Epochs allocated under declared work-score caps, with correlated burst-noise tests.</p></div>
+<nav><a href="./training.html">Learning Cost</a> · <a href="./sweep.html">Budget Sweep</a> · <a href="./audit.html">Evidence Audit</a></nav>
+</header>
+<section class="panel row">
+<label class="file">Choose Phase 14 JSON<input id="file" type="file" accept=".json,application/json"></label>
+<button id="load">Load local report</button><span id="status" role="status" aria-live="polite">NO REPORT LOADED</span>
+</section>
+<section class="panel metrics">
+<div class="metric"><small>Declared work caps</small><b id="caps">—</b></div>
+<div class="metric"><small>Paired seeds</small><b id="seeds">—</b></div>
+<div class="metric"><small>Signal families</small><b id="signals">—</b></div>
+<div class="metric"><small>Experimental cells</small><b id="runs">—</b></div>
+</section>
+<section class="columns">
+<div class="panel">
+<div class="row"><h2>Held-out accuracy versus work-score cap</h2>
+<label>Signal <select id="signal" disabled><option>Load report</option></select></label>
+<label>Noise <select id="noise" disabled><option>Load report</option></select></label>
+<label>Delay <select id="delay" disabled><option>Load report</option></select></label>
+</div>
+<canvas id="chart" width="940" height="420" role="img" aria-label="Model held-out test accuracy across training-work caps"></canvas>
+<p class="note">Test accuracy is averaged across independent seeds. These symbolic scores do not represent measured FLOPs or physical energy.</p>
+</div>
+<aside class="panel">
+<h2>Critical interpretation</h2>
+<p><b>Each symbolic work event is weighted one.</b> Real machine costs differ. This is a transparent rule for allocating model epochs, not actual compute parity.</p>
+<p>We record recurrent forward/backward terms, readout terms, parameter updates, shared reservoir extraction, and candidate validation.</p>
+<p>When a model reaches the maximum epoch count, it may leave unused work score. That unused allocation is visible rather than being hidden.</p>
+<p>The <b>burst</b> family flips whole contiguous blocks of observed bits while leaving the clean target sequence unchanged.</p>
+</aside>
+</section>
+<section class="panel">
+<h2>Accuracy, epoch allocation and local selection time</h2>
+<div class="scroll"><table><thead><tr><th>Work cap</th><th>Model</th><th>Epochs</th><th>Modeled score</th><th>Unused cap</th><th>Mean test accuracy</th><th>Selection median (ms)</th></tr></thead>
+<tbody id="results"><tr><td colspan="7">Load a report to compare budgets.</td></tr></tbody></table></div>
+</section>
+<section class="panel">
+<div class="row"><h2>Detailed allocation ledger</h2>
+<label>Work cap <select id="cap" disabled><option>Load report</option></select></label>
+<label>Seed <select id="seed" disabled><option>Load report</option></select></label>
+</div>
+<p class="note">These operation categories have unequal real computational costs. Majority is a training-only vote and deliberately not under the neural-work cap.</p>
+<div class="scroll"><table><thead><tr><th>Model</th><th>Epochs</th><th>Fixed-feature events</th><th>Validation terms</th><th>Training proxy</th><th>Optimizer updates</th><th>Selected rate</th></tr></thead>
+<tbody id="ledger"><tr><td colspan="7">No allocation loaded.</td></tr></tbody></table></div>
+</section>
+<section class="panel note"><b>Reproduce on your computer</b>
+<p><code>python -m phineubio.workbudget --json-output dashboard/workbudget-report.json --csv-output workbudget-results.csv</code></p>
+<p><code>python -m http.server 8000</code> then open this page. Alternatively choose a JSON report locally. No CDN, paid service, or third-party JavaScript.</p></section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const models=[
+{id:"trainable_gru",name:"Trainable GRU",color:"#63e7d4"},
+{id:"trainable_elman",name:"Trainable Elman",color:"#80afff"},
+{id:"spiking_lif",name:"Spiking LIF",color:"#ffbc7d"},
+{id:"tanh_reservoir",name:"Fixed tanh",color:"#b3d7b2"},
+{id:"history_window",name:"History window",color:"#dba9f7"},
+{id:"delayed_tap",name:"Delayed tap",color:"#ebdb96"},
+{id:"majority",name:"Majority",color:"#a8bbc9"}
+];
+const pct=n=>Number.isFinite(n)?(n*100).toFixed(1)+"%":"—";
+const ms=n=>Number.isFinite(n)?(n/1e6).toFixed(2):"—";
+let report=null;
+function status(s){$("status").textContent=s;}
+function verify(d){
+ if(!d||d.schema_version!=="14.0"||d.task!=="proxy_budgeted_temporal_training_comparison"||
+    d.substrate!=="software_simulation"||!d.configuration||
+    !d.preselected_allocations||!Array.isArray(d.runs)||!Array.isArray(d.summary)||
+    d.runs.length>2000||d.summary.length>500)throw Error("Expected a Phase 14 report");
+ for(const r of d.runs){
+  if(!r.accuracy||!r.training_effort||!r.selection||
+     !models.every(m=>Number.isFinite(r.accuracy[m.id])&&r.accuracy[m.id]>=0&&
+       r.accuracy[m.id]<=1&&r.training_effort[m.id]&&
+       Number.isFinite(r.training_effort[m.id].selection_elapsed_ns)))throw Error("Invalid report row");
+ }
+ return d;
+}
+function cell(row,value){const td=document.createElement("td");td.textContent=String(value);row.append(td);}
+function fill(id,values,format){
+ const s=$(id);s.replaceChildren();
+ for(const v of values){const option=document.createElement("option");option.value=String(v);option.textContent=format(v);s.append(option);}
+ s.disabled=false;s.onchange=render;
+}
+function selected(){
+ const signal=$("signal").value,noise=Number($("noise").value),delay=Number($("delay").value);
+ return {signal,noise,delay,rows:report.summary.filter(s=>
+     s.signal_family===signal&&s.noise===noise&&s.delay===delay).sort((a,b)=>a.work_cap-b.work_cap)};
+}
+function chart(rows){
+ const canvas=$("chart"),ctx=canvas.getContext("2d"),w=canvas.width,h=canvas.height;
+ const l=56,r=w-23,t=22,b=h-57;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#0a1a2d";ctx.fillRect(0,0,w,h);
+ ctx.font="13px system-ui";ctx.fillStyle="#bccbd7";ctx.strokeStyle="#344e61";
+ for(let k=0;k<=4;k++){
+  const y=b-(b-t)*k/4;ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(r,y);ctx.stroke();ctx.fillText(k*25+"%",8,y+4);
+ }
+ const xpos=i=>l+(i+.5)*(r-l)/Math.max(1,rows.length);
+ models.forEach(m=>{
+  ctx.strokeStyle=m.color;ctx.lineWidth=2;ctx.beginPath();
+  rows.forEach((row,i)=>{const y=b-(b-t)*row.accuracy[m.id].mean;if(i===0)ctx.moveTo(xpos(i),y);else ctx.lineTo(xpos(i),y);});
+  ctx.stroke();
+  rows.forEach((row,i)=>{const y=b-(b-t)*row.accuracy[m.id].mean;
+   ctx.fillStyle=m.color;ctx.beginPath();ctx.arc(xpos(i),y,5,0,Math.PI*2);ctx.fill();});
+ });
+ rows.forEach((row,i)=>{ctx.fillStyle="#dceaf3";ctx.fillText(String(row.work_cap),xpos(i)-30,b+23);});
+ ctx.fillStyle="#bdcfdb";ctx.fillText("Symbolic work-score cap",w/2-75,h-10);
+}
+function render(){
+ if(!report)return;
+ const {signal,noise,delay,rows}=selected();chart(rows);
+ $("results").replaceChildren();
+ for(const s of rows){
+  const alloc=report.preselected_allocations[String(s.work_cap)];
+  for(const m of models){
+   const a=alloc[m.id],tr=document.createElement("tr");
+   cell(tr,s.work_cap);cell(tr,m.name);cell(tr,a.epochs);
+   cell(tr,a.modeled_selection_units);cell(tr,a.unused_cap===null?"N/A":a.unused_cap);
+   cell(tr,pct(s.accuracy[m.id].mean));cell(tr,ms(s.median_selection_elapsed_ns[m.id]));
+   $("results").append(tr);
+  }
+ }
+ $("ledger").replaceChildren();
+ const cap=Number($("cap").value),seed=Number($("seed").value);
+ const row=report.runs.find(x=>x.signal_family===signal&&x.noise===noise&&x.delay===delay&&x.work_cap===cap&&x.seed===seed);
+ if(!row)return;
+ for(const m of models){
+  const a=report.preselected_allocations[String(cap)][m.id],s=a.selection_proxy_components,tr=document.createElement("tr");
+  cell(tr,m.name);cell(tr,a.epochs);
+  cell(tr,s.one_time_feature_events??0);cell(tr,s.candidate_validation_terms??0);
+  cell(tr,s.candidate_training_units??0);
+  cell(tr,row.training_effort[m.id].optimizer_updates);
+  const rate=row.selection[m.id].selected_learning_rate;
+  cell(tr,rate===null?"N/A":rate);$("ledger").append(tr);
+ }
+}
+function mount(d){
+ report=verify(d);const c=d.configuration;
+ $("caps").textContent=c.work_caps.length;$("seeds").textContent=c.seeds.length;
+ $("signals").textContent=c.signal_families.length;$("runs").textContent=d.runs.length;
+ fill("signal",c.signal_families,String);fill("noise",c.noise_levels,pct);fill("delay",c.delays,String);
+ fill("cap",c.work_caps,String);fill("seed",c.seeds,String);
+ status("LOADED "+d.runs.length+" PAIRED EXPERIMENTS");render();
+}
+async function loadLocal(){try{
+ const response=await fetch("./workbudget-report.json",{cache:"no-store"});
+ if(!response.ok)throw Error("No local report");
+ mount(await response.json());
+ }catch(error){status("CHOOSE A PHASE 14 REPORT");}}
+$("file").addEventListener("change",async event=>{
+ const file=event.target.files[0];if(!file)return;
+ try{mount(JSON.parse(await file.text()));}catch(error){status("ERROR: "+error.message);}
+});
+$("load").addEventListener("click",loadLocal);loadLocal();
+</script></body></html>
