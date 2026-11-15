@@ -107,3 +107,12 @@ jobs:
         run: |
           python -c "from pathlib import Path; h=Path('dashboard/study.html').read_text(); Path('study-check.js').write_text(h.split('<script>',1)[1].split('</script>',1)[0])"
           node --check study-check.js
+      - name: Validate Phase 11 compute budget and CPU profiling
+        run: |
+          python -m phineubio.compute --seed-count 1 --signal-families iid --noise-levels 0 --delays 1 --pair-visit-budget 75 --train-sequences 3 --validation-sequences 2 --test-sequences 2 --probe-sequences 2 --sequence-length 12 --burn-in 3 --epochs 2 --inference-repeats 2 --json-output dashboard/compute-report.json --csv-output compute-results.csv
+          python -m json.tool dashboard/compute-report.json > /dev/null
+          python -c "import json,csv; r=json.load(open('dashboard/compute-report.json')); assert r['schema_version']=='11.0'; assert len(r['runs'])==1; assert len(r['runs'][0]['round_order'])==2; assert all(len(x['elapsed_ns'])==2 for x in r['runs'][0]['inference'].values()); assert len(list(csv.DictReader(open('compute-results.csv'))))==7"
+      - name: Check Phase 11 dashboard JavaScript syntax
+        run: |
+          python -c "from pathlib import Path; h=Path('dashboard/compute.html').read_text(); Path('compute-check.js').write_text(h.split('<script>',1)[1].split('</script>',1)[0])"
+          node --check compute-check.js

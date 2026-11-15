@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="PhiNeuBio Phase 11 compute budget and CPU inference lab">
+<title>ΦNeuBio | Compute Budget Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#172538;--border:#31475f;--ink:#edf6fc;--muted:#b1c5d4;--aqua:#59e8d2;--amber:#ffc28e}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 65% 0%,#1f4550,transparent 44%),var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1190px;margin:auto;padding:28px 18px 68px}header{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:14px}
+h1{font-size:clamp(32px,5vw,47px);letter-spacing:-.04em;margin:6px 0 4px}h2{font-size:19px;margin:0 0 7px}
+p,small{color:var(--muted)}p{margin:7px 0}a{color:var(--aqua)}.kicker{color:var(--aqua);font-size:12px;font-weight:800;letter-spacing:.16em}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;margin:14px 0}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+button,.picker,select{font:inherit;border:1px solid #597990;border-radius:8px;background:#24425b;color:var(--ink);padding:9px 12px;cursor:pointer}
+.picker input{display:none}button:focus-visible,.picker:focus-within,select:focus-visible{outline:2px solid var(--aqua);outline-offset:3px}
+#status{font-size:12px;color:var(--aqua)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{padding:12px;background:#0c192a;border-radius:9px}.stat b{display:block;font-size:25px;font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(265px,1fr);gap:14px}canvas{display:block;width:100%;height:auto;background:#0b182a;border-radius:9px}
+.table-wrap{overflow:auto;max-width:100%}table{width:100%;white-space:nowrap;border-collapse:collapse;font-size:13px}
+td,th{border-bottom:1px solid var(--border);padding:10px 12px;text-align:left;font-variant-numeric:tabular-nums}th{color:#c8dae7}
+.note{font-size:13px}code{color:var(--aqua);overflow-wrap:anywhere}
+@media(max-width:870px){.grid{grid-template-columns:1fr}}@media(max-width:530px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><main>
+<header><div><div class="kicker">PHI369 LABS / PHASE 11</div><h1>ΦNeuBio Compute Budget Lab</h1>
+<p>Same probe streams, constrained recurrent work, and actual local Python inference timing.</p></div>
+<nav><a href="./study.html">Study Protocol</a> · <a href="./audit.html">Evidence Audit</a> · <a href="./fairness.html">Fairness Lab</a></nav>
+</header>
+<section class="panel row">
+<label class="picker">Choose Phase 11 report<input id="file" type="file" accept=".json,application/json"></label>
+<button id="load">Load local report</button><span id="status" role="status" aria-live="polite">NO COMPUTE REPORT</span>
+</section>
+<section class="panel stats">
+<div class="stat"><small>Recurrent visit cap</small><b id="budget">—</b></div>
+<div class="stat"><small>Random seeds</small><b id="seeds">—</b></div>
+<div class="stat"><small>Probe repeats</small><b id="repeats">—</b></div>
+<div class="stat"><small>Paired runs</small><b id="runs">—</b></div>
+</section>
+<section class="grid">
+<div class="panel">
+<div class="row" style="justify-content:space-between"><h2>Test accuracy vs measured CPU time</h2>
+<label>Signal <select id="signal" disabled><option>Load report</option></select></label>
+<label>Noise <select id="noise" disabled><option>Load report</option></select></label>
+<label>Delay <select id="delay" disabled><option>Load report</option></select></label>
+</div>
+<canvas id="chart" width="940" height="480" role="img" aria-label="Scatter plot of mean held-out accuracy versus median CPU probe elapsed time"></canvas>
+<p class="note">Horizontal axis is median elapsed milliseconds for a complete probe batch, summarized across seeds. Vertical axis is mean test accuracy. Lower-left isn't automatically better: memory capacity and workloads differ.</p>
+</div>
+<aside class="panel">
+<h2>What exactly is matched?</h2>
+<p><b>Recurrent matrix-entry visits.</b> GRU has three n×n recurrent matrices. Elman, fixed LIF and fixed tanh use one. Hidden widths are chosen so each stays under the declared visit cap.</p>
+<p><b>What isn't matched?</b> The operations done per entry, nonlinearities, trainable parameter counts, training compute, Python interpreter overhead, and conventional memory controls.</p>
+<p>Measurements are from the machine that ran the Python script. This webpage cannot measure your CPU or electrical energy by itself.</p>
+<p class="note" id="environment">No runtime provenance loaded.</p>
+</aside>
+</section>
+<section class="panel">
+<h2>Architecture work descriptors</h2>
+<div class="table-wrap"><table><thead><tr><th>Model</th><th>Width</th><th>Recurrent visits/step</th><th>Budget use</th><th>Trainable slots</th><th>Fixed slots</th><th>Nonlinear calls/step</th></tr></thead>
+<tbody id="costs"><tr><td colspan="7">No report loaded.</td></tr></tbody></table></div>
+</section>
+<section class="panel">
+<h2>Accuracy and inference timing</h2>
+<div class="table-wrap"><table><thead><tr><th>Model</th><th>Mean test accuracy</th><th>Population SD</th><th>Median probe elapsed (ms)</th><th>Sample count per probe</th></tr></thead>
+<tbody id="results"><tr><td colspan="5">No report loaded.</td></tr></tbody></table></div>
+<p class="note">Local time is environment-dependent and randomized by round. Small seed counts are descriptive only; no confidence intervals or physical energy measurements are implied.</p>
+</section>
+<section class="panel">
+<h2>Inference repeat audit</h2>
+<div class="row"><label>Seed <select id="seed" disabled><option>Load report</option></select></label></div>
+<div class="table-wrap"><table><thead><tr><th>Model</th><th>Individual probe elapsed (ms)</th><th>Median elapsed (ms)</th><th>Prediction checksum</th></tr></thead>
+<tbody id="rounds"><tr><td colspan="4">No report loaded.</td></tr></tbody></table></div>
+<p class="note" id="order">Randomized model order per round appears after loading a report.</p>
+</section>
+<section class="panel note">
+<b>Reproduce on your own hardware</b>
+<p><code>python -m phineubio.compute --seed-count 5 --inference-repeats 10 --pair-visit-budget 108 --json-output dashboard/compute-report.json --csv-output compute-results.csv</code></p>
+<p><code>python -m http.server 8000</code> then open this page, or select the generated report directly. Pure Python standard library. No external scripts, tracking, or purchased services.</p>
+</section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const models=[
+{id:"trainable_gru",name:"Trainable GRU",color:"#58e8d1"},
+{id:"trainable_elman",name:"Trainable Elman",color:"#87adff"},
+{id:"spiking_lif",name:"Spiking LIF",color:"#ffb97e"},
+{id:"tanh_reservoir",name:"Fixed tanh",color:"#a5d4ba"},
+{id:"history_window",name:"History window",color:"#d5a6ff"},
+{id:"delayed_tap",name:"Delayed tap",color:"#f1da8b"},
+{id:"majority",name:"Majority",color:"#aebfca"}
+];
+let report=null;
+const pct=x=>Number.isFinite(x)?(x*100).toFixed(1)+"%":"—";
+const ms=x=>Number.isFinite(x)?(x/1e6).toFixed(3):"—";
+function status(text){$("status").textContent=text;}
+function validate(d){
+ if(!d||d.schema_version!=="11.0"||d.task!=="recurrent_pair_budget_cpu_probe"||
+    d.substrate!=="software_simulation"||!d.configuration||!d.structural_cost_profiles||
+    !Array.isArray(d.runs)||!Array.isArray(d.summary)||d.runs.length>1000||d.summary.length>300)throw Error("Expected Phase 11 compute report");
+ for(const s of d.summary){
+  if(!Number.isFinite(s.noise)||!Number.isInteger(s.delay)||!s.accuracy||
+    !s.inference_median_ns_across_seed_medians||!models.every(m=>
+      s.accuracy[m.id]&&Number.isFinite(s.accuracy[m.id].mean)&&
+      Number.isFinite(s.inference_median_ns_across_seed_medians[m.id])&&
+      s.inference_median_ns_across_seed_medians[m.id]>=0))throw Error("Invalid summary");
+ }
+ for(const r of d.runs){
+  if(!r.inference||!r.accuracy||!models.every(m=>
+     Number.isFinite(r.accuracy[m.id])&&r.accuracy[m.id]>=0&&r.accuracy[m.id]<=1&&
+     r.inference[m.id]&&Array.isArray(r.inference[m.id].elapsed_ns)))throw Error("Invalid run");
+ }
+ return d;
+}
+function cell(row,value){const td=document.createElement("td");td.textContent=String(value);row.append(td);}
+function chooser(id,values,format){
+ const select=$(id);select.replaceChildren();
+ for(const item of values){const option=document.createElement("option");option.value=String(item);option.textContent=format(item);select.append(option);}
+ select.disabled=false;select.onchange=render;
+}
+function selected(){
+ return report.summary.find(s=>s.signal_family===$("signal").value&&s.noise===Number($("noise").value)&&s.delay===Number($("delay").value));
+}
+function draw(summary){
+ const canvas=$("chart"),ctx=canvas.getContext("2d"),w=canvas.width,h=canvas.height,l=80,r=w-35,t=30,b=h-70;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#0b182a";ctx.fillRect(0,0,w,h);
+ const values=models.map(model=>({model,accuracy:summary.accuracy[model.id].mean,ns:summary.inference_median_ns_across_seed_medians[model.id]}));
+ const maxTime=Math.max(1,...values.map(x=>x.ns))*1.18;
+ ctx.font="13px system-ui";ctx.fillStyle="#b7c8d7";ctx.strokeStyle="#355068";ctx.lineWidth=1;
+ for(let i=0;i<=4;i++){
+  const y=b-(b-t)*i/4;ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(r,y);ctx.stroke();ctx.fillText(i*25+"%",10,y+5);
+  const x=l+(r-l)*i/4;ctx.beginPath();ctx.moveTo(x,t);ctx.lineTo(x,b);ctx.stroke();ctx.fillText((i*maxTime/4/1e6).toFixed(1),x-10,b+23);
+ }
+ for(const item of values){
+  const x=l+(r-l)*item.ns/maxTime,y=b-(b-t)*item.accuracy;
+  ctx.fillStyle=item.model.color;ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#e4edf4";ctx.fillText(item.model.name,x+10,y-10);
+ }
+ ctx.fillStyle="#b7c8d7";ctx.fillText("Elapsed ms per independent probe batch",w/2-140,h-13);
+}
+function render(){
+ if(!report)return;const summary=selected();
+ if(!summary){status("FILTER NOT FOUND");return;}
+ draw(summary);
+ const result=$("results");result.replaceChildren();
+ const row=report.runs.find(x=>x.signal_family===summary.signal_family&&x.noise===summary.noise&&x.delay===summary.delay&&x.seed===Number($("seed").value));
+ for(const model of models){
+  const tr=document.createElement("tr"),stat=summary.accuracy[model.id];
+  cell(tr,model.name);cell(tr,pct(stat.mean));cell(tr,pct(stat.population_stdev));
+  cell(tr,ms(summary.inference_median_ns_across_seed_medians[model.id]));
+  cell(tr,row?row.inference[model.id].retained_samples_per_repeat:"—");result.append(tr);
+ }
+ const tbody=$("rounds");tbody.replaceChildren();
+ if(row){
+  for(const model of models){const p=row.inference[model.id],tr=document.createElement("tr");
+   cell(tr,model.name);cell(tr,p.elapsed_ns.map(ms).join(", "));cell(tr,ms(p.median_elapsed_ns));cell(tr,p.prediction_checksum);tbody.append(tr);
+  }
+  $("order").textContent=row.round_order.map((order,i)=>"Round "+(i+1)+": "+order.map(key=>models.find(m=>m.id===key)?.name||key).join(" → ")).join(" | ");
+ }
+}
+function mount(data){
+ report=validate(data);const cfg=data.configuration;
+ $("budget").textContent=cfg.pair_visit_budget;$("seeds").textContent=cfg.seeds.length;
+ $("repeats").textContent=cfg.inference_repeats;$("runs").textContent=data.runs.length;
+ const env=data.runtime_environment;
+ $("environment").textContent=env?"Measured on: "+env.os_family+" / "+env.machine_architecture+" / Python "+env.python_version+" / "+env.logical_cpu_count+" logical CPUs.":"No environment metadata";
+ const costs=$("costs");costs.replaceChildren();
+ for(const model of models){const p=data.structural_cost_profiles[model.id],tr=document.createElement("tr");
+  cell(tr,model.name);cell(tr,p.hidden_width||"—");
+  cell(tr,p.recurrent_pair_visits_per_step);
+  cell(tr,p.budget_utilization===null?"unmatched":pct(p.budget_utilization));
+  cell(tr,p.trainable_parameter_slots);cell(tr,p.fixed_parameter_slots);
+  cell(tr,p.nonlinear_function_calls_per_step_proxy);costs.append(tr);
+ }
+ chooser("signal",cfg.signal_families,String);chooser("noise",cfg.noise_levels,pct);
+ chooser("delay",cfg.delays,String);chooser("seed",cfg.seeds,String);
+ status("LOADED "+data.runs.length+" COMPUTE RUNS");render();
+}
+async function loadLocal(){try{const res=await fetch("./compute-report.json",{cache:"no-store"});if(!res.ok)throw Error("No local report");
+ mount(await res.json());}catch(error){status("CHOOSE A PHASE 11 COMPUTE JSON");}}
+$("file").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;
+ try{mount(JSON.parse(await f.text()));}catch(error){status("ERROR: "+error.message);}});
+$("load").addEventListener("click",loadLocal);loadLocal();
+</script></body></html>
