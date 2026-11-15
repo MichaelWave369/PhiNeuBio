@@ -98,3 +98,12 @@ jobs:
         run: |
           python -c "from pathlib import Path; h=Path('dashboard/audit.html').read_text(); Path('audit-check.js').write_text(h.split('<script>',1)[1].split('</script>',1)[0])"
           node --check audit-check.js
+      - name: Validate Phase 10 preregistered sample size study
+        run: |
+          python -m phineubio.study --seed-count 1 --training-sizes 2 3 --signal-families iid --delays 1 --noise-levels 0 --train-epochs 2 --sequence-length 12 --burn-in 3 --validation-sequences 2 --test-sequences 2 --probe-sequences 1 --parameter-budget 55 --resamples 200 --output dashboard/study-report.json --csv-output study-effects.csv
+          python -m json.tool dashboard/study-report.json > /dev/null
+          python -c "import json,csv; r=json.load(open('dashboard/study-report.json')); assert r['schema_version']=='10.0'; assert len(r['records'])==2; assert len(r['summary'])==2; assert all(c['exact_sign_p'] is None for s in r['summary'] for c in s['contrasts']); assert len(list(csv.DictReader(open('study-effects.csv'))))==8"
+      - name: Check Phase 10 study dashboard JavaScript
+        run: |
+          python -c "from pathlib import Path; h=Path('dashboard/study.html').read_text(); Path('study-check.js').write_text(h.split('<script>',1)[1].split('</script>',1)[0])"
+          node --check study-check.js

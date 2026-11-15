@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="PhiNeuBio Phase 10 preregistered study: sample efficiency and multiplicity-aware paired seed comparisons">
+<title>ΦNeuBio | Study Protocol Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#09111e;--panel:#152339;--border:#31485d;--ink:#edf7fb;--muted:#b1c3d2;--aqua:#5ce7d0;--amber:#ffbc75}
+*{box-sizing:border-box}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 65% 0,#214551,transparent 44%),var(--bg);font:15px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1180px;margin:auto;padding:30px 18px 64px}header{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+h1{font-size:clamp(30px,5vw,47px);letter-spacing:-.04em;margin:7px 0}h2{font-size:19px;margin:0 0 7px}
+p,small{color:var(--muted)}p{margin:8px 0}a{color:var(--aqua)}
+.kicker{font-size:12px;color:var(--aqua);font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;margin:14px 0}
+.row{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+button,.picker,select{font:inherit;background:#254158;color:var(--ink);border-radius:8px;padding:9px 12px;border:1px solid #58768a;cursor:pointer}
+.picker input{display:none}button:focus-visible,.picker:focus-within,select:focus-visible{outline:2px solid var(--aqua);outline-offset:3px}
+#status{font-size:12px;color:var(--aqua)}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:#0c192a;border-radius:10px;padding:13px}.stat b{display:block;font-size:24px;font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:14px}
+canvas{width:100%;height:auto;display:block;border-radius:9px;background:#0b192b}
+.scroller{overflow:auto;max-width:100%}table{width:100%;white-space:nowrap;border-collapse:collapse;font-size:13px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}th{color:#d1e1ec}
+.note{font-size:13px}.hash{font:12px/1.4 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}code{color:var(--aqua)}
+@media(max-width:890px){.grid{grid-template-columns:1fr}}@media(max-width:550px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><main>
+<header><div><div class="kicker">PHI369 LABS / PHASE 10</div><h1>ΦNeuBio Study Protocol Lab</h1>
+<p>Frozen hypotheses. Nested training data. One entire family of multiplicity-aware tests.</p></div>
+<nav><a href="./audit.html">Evidence Audit</a> · <a href="./fairness.html">Fairness Lab</a> · <a href="./index.html">Activity Lab</a></nav>
+</header>
+<section class="panel row"><label class="picker">Choose Phase 10 report JSON<input id="file" type="file" accept=".json,application/json"></label>
+<button id="load">Load local study</button><span id="status" role="status" aria-live="polite">NO STUDY REPORT</span>
+</section>
+<section class="panel stats">
+<div class="stat"><small>Independent seeds</small><b id="seeds">—</b></div>
+<div class="stat"><small>Training budgets</small><b id="budgets">—</b></div>
+<div class="stat"><small>Paired hypotheses</small><b id="hypotheses">—</b></div>
+<div class="stat"><small>Study records</small><b id="records">—</b></div>
+</section>
+<section class="grid">
+<div class="panel">
+<h2>How differences change with training data</h2>
+<div class="row">
+<label>Signal <select id="signal" disabled><option>Load report</option></select></label>
+<label>Noise <select id="noise" disabled><option>Load report</option></select></label>
+<label>Delay <select id="delay" disabled><option>Load report</option></select></label>
+<label>Comparison <select id="pair" disabled><option>Load report</option></select></label>
+</div>
+<canvas id="chart" width="960" height="460" role="img" aria-label="Mean paired effect by training sequence count with exploratory seed bootstrap whiskers"></canvas>
+<p class="note">Positive means the first model has higher mean test accuracy. Whiskers are <em>exploratory</em> 95% seed-paired percentile bootstrap intervals, not Holm-corrected intervals.</p>
+</div>
+<aside class="panel"><h2>Scientific boundaries</h2>
+<p id="study-question">The preregistered research question appears when you load a report.</p>
+<p>All model-selection decisions use independent validation streams. Increasing training data reuses a common prefix, while validation and test data stay fixed per seed.</p>
+<p><strong>Exact sign tests</strong> measure how consistently one architecture wins across seeds, not the mean effect magnitude. Holm adjusts sign-test p-values over the entire declared family.</p>
+<p class="note">A small p-value is not proof of superiority, and a large p-value is not evidence of equivalence. Models still have unmatched computational budgets.</p></aside>
+</section>
+<section class="panel">
+<h2>Declared contrasts and uncertainty</h2>
+<div class="scroller"><table><thead><tr><th>Train sequences</th><th>Mean difference (pp)</th><th>Bootstrap 95% (pp)</th><th>Seed wins / losses / ties</th><th>Sign-test p</th><th>Holm-adjusted p</th></tr></thead>
+<tbody id="contrasts"><tr><td colspan="6">Load the study to inspect all training budgets.</td></tr></tbody></table></div>
+</section>
+<section class="panel">
+<h2>Mean test accuracy by training sample budget</h2>
+<div class="scroller"><table><thead><tr><th>Train sequences</th><th>GRU</th><th>Elman</th><th>Spiking LIF</th><th>Fixed tanh</th><th>History window</th><th>Delayed tap</th><th>Majority</th></tr></thead>
+<tbody id="accuracy"><tr><td colspan="8">No report loaded.</td></tr></tbody></table></div>
+</section>
+<section class="panel">
+<h2>Frozen study-plan fingerprint</h2><p class="hash" id="fingerprint">—</p>
+<p class="note" id="limitations">No study loaded. This is simulation-only research, not biological or energy measurement.</p>
+</section>
+<section class="panel note">
+<strong>Run the committed, predeclared plan</strong>
+<p><code>python -m phineubio.study --plan study-plan.json --output dashboard/study-report.json --csv-output study-effects.csv</code></p>
+<p><code>python -m http.server 8000</code> then open this page. A small smoke test is also described in docs/STUDY.md. The full study can require substantial CPU time. No cloud services, trackers, or third-party JavaScript libraries.</p>
+</section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const names={spiking_lif:"Spiking LIF",trainable_gru:"Trainable GRU",tanh_reservoir:"Fixed tanh",history_window:"History window"};
+const modelNames=["trainable_gru","trainable_elman","spiking_lif","tanh_reservoir","history_window","delayed_tap","majority"];
+const pct=v=>Number.isFinite(v)?(v*100).toFixed(2):"—";
+let report=null;
+function status(value){$("status").textContent=value;}
+function validate(r){
+ if(!r||r.schema_version!=="10.0"||r.task!=="preregistered_sample_efficiency_study"||
+    r.substrate!=="software_simulation"||!r.plan||!r.plan.configuration||
+    !Array.isArray(r.summary)||!Array.isArray(r.records)||r.records.length>2000||r.summary.length>300)throw Error("Expected Phase 10 study report");
+ for(const c of r.summary){
+  if(!Number.isInteger(c.train_sequences)||!Number.isFinite(c.noise)||!Number.isInteger(c.delay)||
+     !Array.isArray(c.contrasts)||!c.mean_heldout_accuracy||!modelNames.every(m=>Number.isFinite(c.mean_heldout_accuracy[m])))throw Error("Invalid condition");
+  for(const p of c.contrasts){
+   if(!p.effect||!Number.isFinite(p.effect.mean_difference)||
+      !Number.isInteger(p.effect.paired_seed_count)||p.effect.paired_seed_count<1)throw Error("Invalid contrast");
+   const b=p.effect.bootstrap_95_interval;
+   if(b!==null&&(!Array.isArray(b)||b.length!==2||!b.every(Number.isFinite)))throw Error("Invalid interval");
+  }
+ }
+ return r;
+}
+function chooser(id,values,format){
+ const s=$(id);s.replaceChildren();
+ for(const val of values){const option=document.createElement("option");option.value=String(val);option.textContent=format(val);s.append(option);}
+ s.disabled=false;s.onchange=render;
+}
+function cell(tr,content){const td=document.createElement("td");td.textContent=String(content);tr.append(td);}
+function filtered(){
+ return report.summary.filter(c=>c.signal_family===$("signal").value&&
+    c.noise===Number($("noise").value)&&c.delay===Number($("delay").value))
+    .sort((a,b)=>a.train_sequences-b.train_sequences);
+}
+function render(){
+ if(!report)return;
+ const list=filtered(),pair=$("pair").value;
+ const contrasts=$("contrasts"),accuracy=$("accuracy");contrasts.replaceChildren();accuracy.replaceChildren();
+ for(const condition of list){
+  const c=condition.contrasts.find(p=>p.first+"|"+p.second===pair);
+  if(!c)continue;
+  const e=c.effect,tr=document.createElement("tr"),bounds=e.bootstrap_95_interval;
+  cell(tr,condition.train_sequences);
+  cell(tr,(e.mean_difference>=0?"+":"")+pct(e.mean_difference));
+  cell(tr,bounds===null?"Withheld (<5 seeds)":"["+pct(bounds[0])+", "+pct(bounds[1])+"]");
+  cell(tr,e.positive_seed_count+" / "+e.negative_seed_count+" / "+e.tie_seed_count);
+  cell(tr,c.exact_sign_p===null?"insufficient":c.exact_sign_p.toFixed(4));
+  cell(tr,c.holm_adjusted_sign_p===null?"insufficient":c.holm_adjusted_sign_p.toFixed(4));
+  contrasts.append(tr);
+  const row=document.createElement("tr");cell(row,condition.train_sequences);
+  for(const m of modelNames)cell(row,pct(condition.mean_heldout_accuracy[m]));
+  accuracy.append(row);
+ }
+ draw(list,pair);
+}
+function draw(list,pair){
+ const canvas=$("chart"),ctx=canvas.getContext("2d"),w=canvas.width,h=canvas.height,l=70,r=w-25,t=27,b=h-58;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#0b192b";ctx.fillRect(0,0,w,h);
+ const effects=list.map(c=>({size:c.train_sequences,item:c.contrasts.find(p=>p.first+"|"+p.second===pair)})).filter(x=>x.item);
+ const limits=[-.1,.1];
+ for(const x of effects){const e=x.item.effect;limits.push(e.mean_difference);if(e.bootstrap_95_interval)limits.push(...e.bootstrap_95_interval);}
+ const maxAbs=Math.max(.05,...limits.map(Math.abs));
+ const y=v=>t+(maxAbs-v)/(maxAbs*2)*(b-t);
+ const n=effects.length;
+ const x=i=>l+(i+.5)*(r-l)/Math.max(1,n);
+ ctx.font="13px system-ui";ctx.fillStyle="#b8cbd9";ctx.strokeStyle="#345069";ctx.lineWidth=1;
+ for(let k=-2;k<=2;k++){const v=k*maxAbs/2,py=y(v);ctx.beginPath();ctx.moveTo(l,py);ctx.lineTo(r,py);ctx.stroke();ctx.fillText((100*v).toFixed(1)+" pp",8,py+4);}
+ ctx.strokeStyle="#e3e9f4";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(l,y(0));ctx.lineTo(r,y(0));ctx.stroke();
+ if(!n)return;
+ ctx.strokeStyle="#5ce7d0";ctx.lineWidth=3;ctx.beginPath();
+ effects.forEach((effect,i)=>{const v=effect.item.effect.mean_difference;if(i)ctx.lineTo(x(i),y(v));else ctx.moveTo(x(i),y(v));});
+ ctx.stroke();
+ for(let i=0;i<n;i++){
+  const e=effects[i].item.effect,px=x(i),py=y(e.mean_difference);
+  if(e.bootstrap_95_interval){const [lo,hi]=e.bootstrap_95_interval;
+    ctx.strokeStyle="#d8a4f7";ctx.lineWidth=2;ctx.beginPath();
+    ctx.moveTo(px,y(lo));ctx.lineTo(px,y(hi));
+    ctx.moveTo(px-7,y(lo));ctx.lineTo(px+7,y(lo));ctx.moveTo(px-7,y(hi));ctx.lineTo(px+7,y(hi));ctx.stroke();}
+  ctx.fillStyle=e.mean_difference>=0?"#5ce7d0":"#ffbc75";ctx.beginPath();ctx.arc(px,py,5.5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#cbd9e7";ctx.fillText(String(effects[i].size),px-7,b+22);
+ }
+ ctx.fillText("Training sequences per seed",w/2-94,h-8);
+}
+function mount(data){
+ report=validate(data);const c=report.plan.configuration;
+ $("seeds").textContent=c.seeds.length;$("budgets").textContent=c.train_sizes.length;
+ $("hypotheses").textContent=report.summary.reduce((a,r)=>a+r.contrasts.length,0);
+ $("records").textContent=report.records.length;
+ $("study-question").textContent=report.plan.research_question;
+ $("fingerprint").textContent="SHA-256: "+report.plan_sha256;
+ $("limitations").textContent=Array.isArray(report.limitations)?report.limitations.join(" "):"Software simulations only.";
+ chooser("signal",c.signal_families,String);chooser("noise",c.noise_levels,n=>(100*n).toFixed(0)+"%");
+ chooser("delay",c.delays,String);
+ chooser("pair",report.plan.comparisons.map(p=>p.join("|")),p=>p.split("|").map(x=>names[x]||x).join(" vs "));
+ status("LOADED "+report.summary.length+" STUDY CONDITIONS");render();
+}
+async function loadLocal(){try{
+ const r=await fetch("./study-report.json",{cache:"no-store"});if(!r.ok)throw Error("No report found");
+ mount(await r.json());
+}catch(error){status("CHOOSE A STUDY REPORT JSON");}}
+$("file").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;
+ try{mount(JSON.parse(await file.text()));}catch(error){status("ERROR: "+error.message);}});
+$("load").addEventListener("click",loadLocal);loadLocal();
+</script></body></html>

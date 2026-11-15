@@ -24,3 +24,5 @@ dashboard/fairness-report.json
 fairness-results.csv
 dashboard/audit-report.json
 audit-effects.csv
+dashboard/study-report.json
+study-effects.csv
