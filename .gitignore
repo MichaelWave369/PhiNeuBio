@@ -26,3 +26,5 @@ dashboard/audit-report.json
 audit-effects.csv
 dashboard/study-report.json
 study-effects.csv
+dashboard/compute-report.json
+compute-results.csv

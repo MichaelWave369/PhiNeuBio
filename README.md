@@ -119,13 +119,24 @@ Open [Study Protocol Lab](http://localhost:8000/dashboard/study.html) to inspect
 
 Read [Phase 10 study methodology and limits](docs/STUDY.md). The study excludes nondeterministic hardware timings from its reproducible report and **still does not establish equal computational budget, energy efficiency, or biological advantage**.
 
+## Phase 11: constrained recurrent work and independent CPU probes
+
+A **recurrent matrix-entry visit budget** now sets hidden sizes for trained GRU, trained Elman, fixed spiking LIF and fixed tanh recurrence. Each is evaluated with paired train/validation/test data and repeated **CPU inference** on a separate probe set. Probe model order is randomized by round, and the raw times, parameter slots and architecture work descriptors are retained.
+
+    python -m phineubio.compute --json-output dashboard/compute-report.json --csv-output compute-results.csv
+    python -m http.server 8000
+
+Open [Compute Budget Lab](http://localhost:8000/dashboard/compute.html) to inspect held-out accuracy, recurrent visits per step, trained/fixed weight slots and observed CPU timings.
+
+Read [Phase 11 research methodology](docs/COMPUTE.md). Structural recurrent-loop visits are **not equal FLOPs, CPU instructions, training compute or energy use**. The conventional explicit-memory baselines deliberately remain unmatched.
+
 ## Run tests
 
 Requires Python 3.10+, no third-party runtime packages.
 
     python -m unittest discover -s tests -v
 
-GitHub Actions validates tests and all eight simulation entry points, the Phase 9 audit, and Phase 10 study with Python 3.10 and 3.12.
+GitHub Actions validates tests and all eight prior simulation entry points, the Phase 9 audit, Phase 10 study and Phase 11 compute benchmark with Python 3.10 and 3.12.
 
 ## Research principles
 
@@ -135,7 +146,7 @@ GitHub Actions validates tests and all eight simulation entry points, the Phase 
 4. **Protect future experiments.** Any biological hardware adapter must be explicitly optional and independently safety- and ethics-reviewed.
 5. **Integrate by contract.** PhiStream, PhiMemory9, and CompAware can consume versioned reports without coupling their runtimes.
 
-See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Phase 8 fairness](docs/FAIRNESS.md), [Phase 9 evidence audit](docs/AUDIT.md), [Phase 10 study protocol](docs/STUDY.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
+See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Phase 8 fairness](docs/FAIRNESS.md), [Phase 9 evidence audit](docs/AUDIT.md), [Phase 10 study protocol](docs/STUDY.md), [Phase 11 compute protocol](docs/COMPUTE.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
 
 ## Status
 
@@ -149,7 +160,8 @@ See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md)
 - Phase 8: independent validation of fixed readouts, periodic signals, repeated independent-probe timing
 - Phase 9: IID negative control, complete-grid audit, seed-level exploratory bootstrap uncertainty and local runtime provenance
 - Phase 10: a predeclared sample-efficiency plan, paired sign tests and family-wide Holm correction
-- Phase 11 (proposed): compute-matched comparisons, power planning and audited hardware profiling
+- Phase 11: recurrent-loop visit budgets, paired accuracy and randomized independent CPU inference probes
+- Phase 12 (proposed): real hardware counters, equal training budgets, and broader benchmarks
 - Research-only future: opt-in external biological hardware adapters following safety review
 
 Licensed under [MIT](LICENSE).
