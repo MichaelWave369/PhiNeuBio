@@ -116,3 +116,12 @@ jobs:
         run: |
           python -c "from pathlib import Path; h=Path('dashboard/compute.html').read_text(); Path('compute-check.js').write_text(h.split('<script>',1)[1].split('</script>',1)[0])"
           node --check compute-check.js
+      - name: Validate Phase 12 budget sweep and work ledger
+        run: |
+          python -m phineubio.sweep --budgets 12 27 --seed-count 1 --signal-families iid --noise-levels 0 --delays 1 --train-sequences 3 --validation-sequences 2 --test-sequences 2 --probe-sequences 1 --sequence-length 12 --burn-in 3 --epochs 2 --inference-repeats 2 --json-output dashboard/sweep-report.json --csv-output sweep-results.csv
+          python -m json.tool dashboard/sweep-report.json > /dev/null
+          python -c "import json,csv; d=json.load(open('dashboard/sweep-report.json')); assert d['schema_version']=='12.0'; assert len(d['budgets'])==2; assert len(d['frontiers'])==1; assert all('spiking_lif' in x['probe_operations'][0]['events'] for x in d['budgets']); assert len(list(csv.DictReader(open('sweep-results.csv'))))==14"
+      - name: Check Phase 12 dashboard JavaScript syntax
+        run: |
+          python -c "from pathlib import Path; h=Path('dashboard/sweep.html').read_text(); Path('sweep-check.js').write_text(h.split('<script>',1)[1].split('</script>',1)[0])"
+          node --check sweep-check.js

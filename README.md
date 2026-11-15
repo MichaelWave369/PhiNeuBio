@@ -130,13 +130,22 @@ Open [Compute Budget Lab](http://localhost:8000/dashboard/compute.html) to inspe
 
 Read [Phase 11 research methodology](docs/COMPUTE.md). Structural recurrent-loop visits are **not equal FLOPs, CPU instructions, training compute or energy use**. The conventional explicit-memory baselines deliberately remain unmatched.
 
+## Phase 12: multiple recurrent budgets and operation ledgers
+
+The [Budget Sweep Lab](http://localhost:8000/dashboard/sweep.html) compares several recurrent matrix-visit caps on identical, independently seeded train/validation/test/probe streams. Along with paired held-out accuracy and CPU timing, the new **work ledger** separately reports dense recurrent products, readout products, nonlinear evaluations, LIF spike-triggered weight additions, nonzero active edges and threshold checks. These categories are **not** exact hardware instructions, standardized FLOPs or physical energy measurements.
+
+    python -m phineubio.sweep --json-output dashboard/sweep-report.json --csv-output sweep-results.csv
+    python -m http.server 8000
+
+Open the link above or load the saved JSON locally. Read [Phase 12 methodology](docs/SWEEP.md). The descriptive structural Pareto screen compares recurrent models only; conventional explicit-memory controls remain separate.
+
 ## Run tests
 
 Requires Python 3.10+, no third-party runtime packages.
 
     python -m unittest discover -s tests -v
 
-GitHub Actions validates tests and all eight prior simulation entry points, the Phase 9 audit, Phase 10 study and Phase 11 compute benchmark with Python 3.10 and 3.12.
+GitHub Actions validates tests and all eight prior simulation entry points, the Phase 9 audit, Phase 10 study Phase 11 compute benchmark and Phase 12 budget sweep with Python 3.10 and 3.12.
 
 ## Research principles
 
@@ -146,7 +155,7 @@ GitHub Actions validates tests and all eight prior simulation entry points, the 
 4. **Protect future experiments.** Any biological hardware adapter must be explicitly optional and independently safety- and ethics-reviewed.
 5. **Integrate by contract.** PhiStream, PhiMemory9, and CompAware can consume versioned reports without coupling their runtimes.
 
-See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Phase 8 fairness](docs/FAIRNESS.md), [Phase 9 evidence audit](docs/AUDIT.md), [Phase 10 study protocol](docs/STUDY.md), [Phase 11 compute protocol](docs/COMPUTE.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
+See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Phase 8 fairness](docs/FAIRNESS.md), [Phase 9 evidence audit](docs/AUDIT.md), [Phase 10 study protocol](docs/STUDY.md), [Phase 11 compute protocol](docs/COMPUTE.md), [Phase 12 budget sweep](docs/SWEEP.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
 
 ## Status
 
@@ -161,7 +170,8 @@ See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md)
 - Phase 9: IID negative control, complete-grid audit, seed-level exploratory bootstrap uncertainty and local runtime provenance
 - Phase 10: a predeclared sample-efficiency plan, paired sign tests and family-wide Holm correction
 - Phase 11: recurrent-loop visit budgets, paired accuracy and randomized independent CPU inference probes
-- Phase 12 (proposed): real hardware counters, equal training budgets, and broader benchmarks
+- Phase 12: multi-budget sweeps, auditable LIF activity and separate algorithmic work ledgers
+- Phase 13 (proposed): matched end-to-end training budgets, broader signals and external hardware counters
 - Research-only future: opt-in external biological hardware adapters following safety review
 
 Licensed under [MIT](LICENSE).
