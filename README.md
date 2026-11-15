@@ -139,13 +139,24 @@ The [Budget Sweep Lab](http://localhost:8000/dashboard/sweep.html) compares seve
 
 Open the link above or load the saved JSON locally. Read [Phase 12 methodology](docs/SWEEP.md). The descriptive structural Pareto screen compares recurrent models only; conventional explicit-memory controls remain separate.
 
+## Phase 13: learning-cost accounting and nonstationary signals
+
+[Learning Cost Lab](http://localhost:8000/dashboard/training.html) compares seven architectures across training-epoch budgets and a new switching Markov signal. Every trained candidate receives equal **retained target presentations**, while the report explicitly records unequal sequence-wise BPTT and pointwise readout optimizer update counts, local candidate-selection time and independently held-out test accuracy.
+
+    python -m phineubio.training --json-output dashboard/training-report.json --csv-output training-results.csv
+    python -m http.server 8000
+
+Open the Lab URL, or load the generated JSON locally. Selection timing includes initialization, feature extraction, optimizer training and validation scoring. It is **not** pure gradient processing time, equal compute, electrical energy or evidence of biological tissue learning.
+
+Read [Phase 13 research methodology](docs/TRAINING.md).
+
 ## Run tests
 
 Requires Python 3.10+, no third-party runtime packages.
 
     python -m unittest discover -s tests -v
 
-GitHub Actions validates tests and all eight prior simulation entry points, the Phase 9 audit, Phase 10 study Phase 11 compute benchmark and Phase 12 budget sweep with Python 3.10 and 3.12.
+GitHub Actions validates tests and all eight prior simulation entry points, the Phase 9 audit, Phase 10 study Phase 11 compute benchmark and Phase 12 budget sweep and Phase 13 training-cost study with Python 3.10 and 3.12.
 
 ## Research principles
 
@@ -155,7 +166,7 @@ GitHub Actions validates tests and all eight prior simulation entry points, the 
 4. **Protect future experiments.** Any biological hardware adapter must be explicitly optional and independently safety- and ethics-reviewed.
 5. **Integrate by contract.** PhiStream, PhiMemory9, and CompAware can consume versioned reports without coupling their runtimes.
 
-See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Phase 8 fairness](docs/FAIRNESS.md), [Phase 9 evidence audit](docs/AUDIT.md), [Phase 10 study protocol](docs/STUDY.md), [Phase 11 compute protocol](docs/COMPUTE.md), [Phase 12 budget sweep](docs/SWEEP.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
+See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Phase 8 fairness](docs/FAIRNESS.md), [Phase 9 evidence audit](docs/AUDIT.md), [Phase 10 study protocol](docs/STUDY.md), [Phase 11 compute protocol](docs/COMPUTE.md), [Phase 12 budget sweep](docs/SWEEP.md), [Phase 13 learning-cost protocol](docs/TRAINING.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
 
 ## Status
 
@@ -171,7 +182,8 @@ See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md)
 - Phase 10: a predeclared sample-efficiency plan, paired sign tests and family-wide Holm correction
 - Phase 11: recurrent-loop visit budgets, paired accuracy and randomized independent CPU inference probes
 - Phase 12: multi-budget sweeps, auditable LIF activity and separate algorithmic work ledgers
-- Phase 13 (proposed): matched end-to-end training budgets, broader signals and external hardware counters
+- Phase 13: matched target-exposure budgets, explicit optimizer-update counts, local selection timing and synthetic switching signals
+- Phase 14 (proposed): instrumented compute parity and broader temporal tasks
 - Research-only future: opt-in external biological hardware adapters following safety review
 
 Licensed under [MIT](LICENSE).
