@@ -32,3 +32,5 @@ dashboard/sweep-report.json
 sweep-results.csv
 dashboard/training-report.json
 training-results.csv
+dashboard/workbudget-report.json
+workbudget-results.csv

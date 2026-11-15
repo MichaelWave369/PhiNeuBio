@@ -150,6 +150,17 @@ Open the Lab URL, or load the generated JSON locally. Selection timing includes 
 
 Read [Phase 13 research methodology](docs/TRAINING.md).
 
+## Phase 14: work-score caps and burst-corrupted memory
+
+**Phase 14 does not claim true compute parity.** It assigns each trained model the largest number of epochs that fits a declared symbolic work-score cap, then reports *every* score component, unused cap, optimizer updates, separate measured Python candidate-selection time and independent held-out test accuracy. The unit-weight score adds non-equivalent events and does not measure real FLOPs, CPU instructions or energy.
+
+It also tests a new `burst` signal family: temporally correlated blocks of corrupted observations, while the clean binary target remains fixed.
+
+    python -m phineubio.workbudget --json-output dashboard/workbudget-report.json --csv-output workbudget-results.csv
+    python -m http.server 8000
+
+Open [Work Budget Lab](http://localhost:8000/dashboard/workbudget.html), or choose a saved JSON report locally. Read the [Phase 14 research protocol](docs/WORKBUDGET.md) for the work-score formula and limits.
+
 ## Run tests
 
 Requires Python 3.10+, no third-party runtime packages.
@@ -166,7 +177,7 @@ GitHub Actions validates tests and all eight prior simulation entry points, the 
 4. **Protect future experiments.** Any biological hardware adapter must be explicitly optional and independently safety- and ethics-reviewed.
 5. **Integrate by contract.** PhiStream, PhiMemory9, and CompAware can consume versioned reports without coupling their runtimes.
 
-See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Phase 8 fairness](docs/FAIRNESS.md), [Phase 9 evidence audit](docs/AUDIT.md), [Phase 10 study protocol](docs/STUDY.md), [Phase 11 compute protocol](docs/COMPUTE.md), [Phase 12 budget sweep](docs/SWEEP.md), [Phase 13 learning-cost protocol](docs/TRAINING.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
+See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md), [Temporal research](docs/TEMPORAL.md), [Adaptive competition](docs/COMPETITION.md), [Independent validation](docs/VALIDATION.md), [Phase 8 fairness](docs/FAIRNESS.md), [Phase 9 evidence audit](docs/AUDIT.md), [Phase 10 study protocol](docs/STUDY.md), [Phase 11 compute protocol](docs/COMPUTE.md), [Phase 12 budget sweep](docs/SWEEP.md), [Phase 13 learning-cost protocol](docs/TRAINING.md), [Phase 14 work-score budget protocol](docs/WORKBUDGET.md), [Delayed-memory protocol](docs/EXPERIMENTS.md), [Integrations](docs/INTEGRATIONS.md), [Feedback protocol](docs/FEEDBACK.md), [Memory benchmarks](docs/BENCHMARKS.md), and [Research/ethics boundaries](docs/ETHICS.md).
 
 ## Status
 
@@ -183,7 +194,8 @@ See [Architecture](docs/ARCHITECTURE.md), [Robustness study](docs/ROBUSTNESS.md)
 - Phase 11: recurrent-loop visit budgets, paired accuracy and randomized independent CPU inference probes
 - Phase 12: multi-budget sweeps, auditable LIF activity and separate algorithmic work ledgers
 - Phase 13: matched target-exposure budgets, explicit optimizer-update counts, local selection timing and synthetic switching signals
-- Phase 14 (proposed): instrumented compute parity and broader temporal tasks
+- Phase 14: declared training-work proxy caps, reportable unused budgets and burst-correlated observation noise
+- Phase 15 (proposed): independently calibrated training work and optional real CPU counters
 - Research-only future: opt-in external biological hardware adapters following safety review
 
 Licensed under [MIT](LICENSE).
