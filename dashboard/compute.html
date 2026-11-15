@@ -66,8 +66,8 @@ td,th{border-bottom:1px solid var(--border);padding:10px 12px;text-align:left;fo
 <section class="panel">
 <h2>Inference repeat audit</h2>
 <div class="row"><label>Seed <select id="seed" disabled><option>Load report</option></select></label></div>
-<div class="table-wrap"><table><thead><tr><th>Model</th><th>Individual probe elapsed (ms)</th><th>Prediction checksum</th></tr></thead>
-<tbody id="rounds"><tr><td colspan="3">No report loaded.</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>Model</th><th>Individual probe elapsed (ms)</th><th>Median elapsed (ms)</th><th>Prediction checksum</th></tr></thead>
+<tbody id="rounds"><tr><td colspan="4">No report loaded.</td></tr></tbody></table></div>
 <p class="note" id="order">Randomized model order per round appears after loading a report.</p>
 </section>
 <section class="panel note">
@@ -151,7 +151,7 @@ function render(){
  const tbody=$("rounds");tbody.replaceChildren();
  if(row){
   for(const model of models){const p=row.inference[model.id],tr=document.createElement("tr");
-   cell(tr,model.name);cell(tr,p.elapsed_ns.map(ms).join(", "));cell(tr,p.prediction_checksum);tbody.append(tr);
+   cell(tr,model.name);cell(tr,p.elapsed_ns.map(ms).join(", "));cell(tr,ms(p.median_elapsed_ns));cell(tr,p.prediction_checksum);tbody.append(tr);
   }
   $("order").textContent=row.round_order.map((order,i)=>"Round "+(i+1)+": "+order.map(key=>models.find(m=>m.id===key)?.name||key).join(" → ")).join(" | ");
  }
